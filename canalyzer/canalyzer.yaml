@@ -1,0 +1,10 @@
+import:
+  days: 15
+
+analyze:
+ - ETH
+ - DCN
+ - DENT
+ - DOGE
+ - BCN
+ - DOVU
