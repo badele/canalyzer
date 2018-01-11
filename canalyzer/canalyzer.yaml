@@ -1,10 +1,18 @@
-import:
-  days: 15
+select:
+  market:
+    - HitBTC
+  currency:
+    - ETH
 
-analyze:
- - ETH
- - DCN
- - DENT
- - DOGE
- - BCN
- - DOVU
+import:
+  daily: 7d
+  cache:
+    global: 60m
+
+# analyze:
+#  - ETH
+#  # - DCN
+#  # - DENT
+#  # - DOGE
+#  # - BCN
+#  # - DOVU

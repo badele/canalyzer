@@ -11,7 +11,6 @@ from tabulate import tabulate
 # Canalyzer
 import mylib
 
-
 # init
 fanalyzer = open("canalyzer.yaml", "r")
 yanalyzer = yaml.load(fanalyzer)
