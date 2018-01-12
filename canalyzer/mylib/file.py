@@ -30,7 +30,7 @@ def loadJSON(filename,cacheduration=0):
     now = mylib.date.getNow()
     ftime = os.path.getmtime(filename)
 
-    if ftime + cacheduration > now:
+    if cacheduration == 0 or ftime + cacheduration > now:
         return json.load(open(filename, 'r'))
 
     return None

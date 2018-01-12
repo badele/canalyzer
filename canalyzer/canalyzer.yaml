@@ -5,7 +5,7 @@ select:
     - ETH
 
 import:
-  daily: 7d
+  daily: 30d
   cache:
     global: 60m
 
