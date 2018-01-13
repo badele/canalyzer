@@ -5,9 +5,25 @@ select:
     - ETH
 
 import:
-  daily: 30d
-  cache:
-    global: 60m
+  nbdays: 30d
+
+cache:
+  duration: 60m
+
+analyze:
+  period:
+    - dayly:
+      period: 1d
+      resample: m
+#    - weekly:
+#      period: 7d
+#      groupby: 1m
+#    - monthly:
+#      period: 30d
+#      groupby: 1m
+#    - quarterly:
+#      period: 90d
+#      groupby: 1m
 
 # analyze:
 #  - ETH
