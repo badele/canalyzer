@@ -8,11 +8,14 @@ import sys
 import yaml
 from tabulate import tabulate
 
+from pymarketcap import Pymarketcap
+
 import numpy as np
 import pandas as pd
 
 # Canalyzer
 import mylib
+import mylib.date
 from mylib import commons
 
 # def analyseAllCoinsPerf(coins,nbdays=1):
@@ -98,11 +101,31 @@ from mylib import commons
 #
 # print (tabulate(coinsinfo,headers="keys", floatfmt=("", "",".1f",".6f",".2f",".2f",".2f")))
 
+
 commons.initCanalyzer()
+coinmarketcap = Pymarketcap()
+coinsID = commons.getCoins4Markets(coinmarketcap)
 
-df = commons.loadCoinHistorical("BCN",mylib.conf.yanalyzer['analyze']['period'][0]['period'])
-r = df.resample('10min')
-result = r.agg(['min','mean','max'])
+# Load all coins for selected market
+nbdays = '2d'
+frames = []
+for coin in coinsID:
+    frames.append(commons.loadCoinHistorical(coin, nbdays))
+df = pd.concat(frames)
+#df = df.sort_index(by=['coin'])
 
+# filter two days and resample
+filtered = df.ix['2018-01-13 00:00:00':'2018-01-14 23:59:59']
+#r = filtered.resample(mylib.conf.yanalyzer['analyze']['period'][0]['resample'])
 
-print (result['price_usd'])
+# Groups
+grp = filtered.groupby([pd.Grouper(freq=mylib.conf.yanalyzer['analyze']['period'][0]['resample'],level='date'),'coin'])
+grp = grp.agg({'price_usd': ['min', 'max', 'first', 'last']})
+grp = grp.rename({'price_usd': 'price', 'first':'open', 'last':'close','min':'low','max':'high'}, axis='columns')
+
+# Compute coin performance
+previous = grp.shift(1)['price']['close']
+grp['gain'] = grp['price']['close'] - previous
+grp['perf'] = ((grp['price']['close'] / previous) - 1) * 100
+
+print(grp[(grp.gain<0)])

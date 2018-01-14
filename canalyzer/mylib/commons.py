@@ -176,7 +176,10 @@ def loadCoinHistorical(coin,nbdays):
         datas.append(df)
 
     df = pd.concat(datas)
+    df['coin'] = coin
+
     df.set_index('date', inplace=True)
-    df.index = df.index.tz_localize('UTC')
+    df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
+    df = df.sort_index()
 
     return df

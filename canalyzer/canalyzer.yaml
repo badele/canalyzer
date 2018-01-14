@@ -1,3 +1,6 @@
+conf:
+  timezone: Europe/Paris
+
 select:
   market:
     - HitBTC
@@ -13,8 +16,8 @@ cache:
 analyze:
   period:
     - dayly:
-      period: 1d
-      resample: m
+      period: 2d
+      resample: 24H
 #    - weekly:
 #      period: 7d
 #      groupby: 1m
