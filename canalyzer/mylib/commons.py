@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import time
 import datetime
 
 import mylib.conf
@@ -109,7 +110,7 @@ def importCoinsHistorical(coinmarketcap,coins):
             print ("Download %s stock info for %s" % (coin, datetext))
             try:
                 datas = {'date':[]}
-                coininfo = coinmarketcap.graphs.currency("ETH",dt_start,dt_end)
+                coininfo = coinmarketcap.graphs.currency(coin,dt_start,dt_end)
 
                 # Add date column and remove timestam on all keys
                 for key in coininfo.keys():
@@ -127,26 +128,15 @@ def importCoinsHistorical(coinmarketcap,coins):
             except (KeyboardInterrupt, SystemExit):
                 raise
 
-                # except:
-                #     pass
+            except Exception:
+                print ("ERROR => %s / %s / %s" % (coin,dt_start,dt_end))
+                pass
 
-            # coinmarketcap.graphs.currency("BTC")
-            #
-            # cdate = datetime.datetime(ts.year, ts.month, ts.day)
-            #
-            # datetext = "%02d-%02d-%02d" % (ts.year, ts.month, ts.day)
-            # filename = "%s/daily_%s.json" % (coinpath, datetext)
-            # if not os.path.exists(filename):
-            #     print ("Download %s stock info for %s" % (coin, datetext))
-            #     try:
-            #         stockinfo = coinmarketcap.historical(coin, cdate, cdate)
-            #         if len(stockinfo) > 0:
-            #             mylib.converter.coinmarketcap.save_daily(filename,stockinfo[0])
-            #     except (KeyboardInterrupt, SystemExit):
-            #         raise
-            #
-            #     except:
-            #         pass
+            # coinmarketcap API limitation
+            pausetime = 10
+            print ("Coinmarketcap pause during %s seconds" % pausetime)
+            time.sleep(pausetime)
+
 
 def loadCoinHistorical(coin,nbdays):
     # Get period from import:daily yaml parameter

@@ -83,9 +83,4 @@ commons.initCanalyzer()
 
 coinmarketcap = Pymarketcap()
 coinsID = commons.getCoins4Markets(coinmarketcap)
-#getLastCoinsInformation(coinsID)
 commons.importCoinsHistorical(coinmarketcap,coinsID)
-#analyseAllCoinsPerf(coinsID)
-
-#coinsinfo = getLastCoinsInformation(coinsID)
-#print(coinsinfo)
