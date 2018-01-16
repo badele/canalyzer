@@ -9,7 +9,20 @@ def getNow():
 
     return ts
 
+def getFilenameDateRange(humanperiod):
+    seconds = int(humanDurationToSecond(humanperiod))
+
+    dt_end = datetime.datetime.now()
+    dt_start = dt_end - datetime.timedelta(seconds=seconds)
+
+    dt_start = dt_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    dt_end = dt_end.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    print (dt_start)
+    print (dt_end)
+
 def humanDurationToSecond(duration):
+
     durations = {
     's': 1,
     'm': 60,

@@ -124,11 +124,8 @@ from mylib import commons
 #
 #     return grp
 
-def AnalyseCoin(coin):
-
-
+def AnalyseCoin(coin,nbdays, resample):
     # Compute text date
-    nbdays = '2d'
     dayseconds = int(mylib.date.humanDurationToSecond(nbdays))
     dt_end = datetime.datetime.now()
     dt_end = dt_end.replace(hour=23, minute=59, second=59)
@@ -141,7 +138,7 @@ def AnalyseCoin(coin):
 
     # filter and resample
     filtered = df.ix[textstart:textend]
-    r = filtered.resample(mylib.conf.yanalyzer['analyze']['period'][0]['resample'])
+    r = filtered.resample(resample)
     r = r.agg({'price_usd': ['min', 'max', 'first', 'last']})
     r = r.rename({'price_usd': 'price', 'first': 'open', 'last': 'close', 'min': 'low', 'max': 'high'},
                      axis='columns')
@@ -160,9 +157,13 @@ coinsID = commons.getCoins4Markets(coinmarketcap)
 good = 0
 missing = 0
 allcoins = {}
+
+nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
+resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
+
 for coin in coinsID:
     try:
-        result = AnalyseCoin(coin)
+        result = AnalyseCoin(coin,nbdays, resample)
         if len(result)==2:
             good += 1
             allcoins[coin] = result['price']['close']
