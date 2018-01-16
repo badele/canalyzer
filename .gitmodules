@@ -1,3 +1,0 @@
-[submodule "canalyzer/canalyzer-cache"]
-	path = canalyzer/canalyzer-cache
-	url = git@github.com:badele/canalyzer-cache.git
