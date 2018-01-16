@@ -3,6 +3,7 @@
 # Sys
 import os
 import sys
+import datetime
 
 # Libs
 import yaml
@@ -102,30 +103,84 @@ from mylib import commons
 # print (tabulate(coinsinfo,headers="keys", floatfmt=("", "",".1f",".6f",".2f",".2f",".2f")))
 
 
+# def AnalyseCoin(coin):
+#     nbdays = '2d'
+#     df = commons.loadCoinHistorical(coin, nbdays)
+#
+#     # filter two days and resample
+#     #filtered = df.ix['2018-01-14 00:00:00':'2018-01-15 23:59:59']
+#     r = filtered.resample(mylib.conf.yanalyzer['analyze']['period'][0]['resample'])
+#
+#     # Groups
+#     grp = filtered.groupby([pd.Grouper(freq='1d', level='date'), 'coin'])
+#     grp = grp.agg({'price_usd': ['min', 'max', 'first', 'last']})
+#     grp = grp.rename({'price_usd': 'price', 'first': 'open', 'last': 'close', 'min': 'low', 'max': 'high'},
+#                      axis='columns')
+#
+#     # Compute coin performance
+#     previous = grp.shift(1)['price']['close']
+#     grp['gain'] = grp['price']['close'] - previous
+#     grp['perf'] = ((grp['price']['close'] / previous) - 1) * 100
+#
+#     return grp
+
 def AnalyseCoin(coin):
+
+
+    # Compute text date
     nbdays = '2d'
+    dayseconds = int(mylib.date.humanDurationToSecond(nbdays))
+    dt_end = datetime.datetime.now()
+    dt_end = dt_end.replace(hour=23, minute=59, second=59)
+    dt_start = dt_end - datetime.timedelta(seconds=dayseconds-1)
+
+    textstart = "%02d-%02d-%02d 00:00:00" % (dt_start.year, dt_start.month, dt_start.day)
+    textend = "%02d-%02d-%02d 23:59:59" % (dt_end.year, dt_end.month, dt_end.day)
+
     df = commons.loadCoinHistorical(coin, nbdays)
 
-    # filter two days and resample
-    filtered = df.ix['2018-01-14 00:00:00':'2018-01-15 23:59:59']
-    # r = filtered.resample(mylib.conf.yanalyzer['analyze']['period'][0]['resample'])
-
-    # Groups
-    grp = filtered.groupby([pd.Grouper(freq='1d', level='date'), 'coin'])
-    grp = grp.agg({'price_usd': ['min', 'max', 'first', 'last']})
-    grp = grp.rename({'price_usd': 'price', 'first': 'open', 'last': 'close', 'min': 'low', 'max': 'high'},
+    # filter and resample
+    filtered = df.ix[textstart:textend]
+    r = filtered.resample(mylib.conf.yanalyzer['analyze']['period'][0]['resample'])
+    r = r.agg({'price_usd': ['min', 'max', 'first', 'last']})
+    r = r.rename({'price_usd': 'price', 'first': 'open', 'last': 'close', 'min': 'low', 'max': 'high'},
                      axis='columns')
 
     # Compute coin performance
-    previous = grp.shift(1)['price']['close']
-    grp['gain'] = grp['price']['close'] - previous
-    grp['perf'] = ((grp['price']['close'] / previous) - 1) * 100
+    previous = r.shift(1)['price']['close']
+    r['gain'] = r['price']['close'] - previous
+    r['perf'] = ((r['price']['close'] / previous) - 1) * 100
 
-    print(grp)
+    return r
 
 commons.initCanalyzer()
 coinmarketcap = Pymarketcap()
 coinsID = commons.getCoins4Markets(coinmarketcap)
 
+good = 0
+missing = 0
+allcoins = {}
 for coin in coinsID:
-    AnalyseCoin(coin)
+    try:
+        result = AnalyseCoin(coin)
+        if len(result)==2:
+            good += 1
+            allcoins[coin] = result['price']['close']
+        else:
+            missing += 1
+
+    except (KeyboardInterrupt, SystemExit):
+        raise
+
+    except Exception:
+        missing += 1
+
+previous = pd.DataFrame(allcoins).iloc[0].sum()
+now = pd.DataFrame(allcoins).iloc[1].sum()
+gain = now - previous
+perf = ((now / previous) - 1) * 100
+
+print ("%s coins from market (%s missing)" % (good, missing))
+print ("Gain: %.02f $" % gain)
+print ("perf: %0.2f %%" % perf)
+

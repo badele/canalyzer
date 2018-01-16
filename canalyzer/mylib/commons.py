@@ -130,10 +130,9 @@ def importCoinsHistorical(coinmarketcap,coins):
 
             except Exception:
                 print ("ERROR => %s / %s / %s" % (coin,dt_start,dt_end))
-                pass
 
             # coinmarketcap API limitation
-            pausetime = 10
+            pausetime = 6
             print ("Coinmarketcap pause during %s seconds" % pausetime)
             time.sleep(pausetime)
 
@@ -166,7 +165,6 @@ def loadCoinHistorical(coin,nbdays):
         datas.append(df)
 
     df = pd.concat(datas)
-    df['coin'] = coin
 
     df.set_index('date', inplace=True)
     df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
