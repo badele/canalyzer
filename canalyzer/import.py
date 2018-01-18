@@ -4,8 +4,9 @@ import os
 
 from pymarketcap import Pymarketcap
 
+# Canalyzer
+import mylib.date
 from mylib import commons
-
 
 # def getLastCoinsInformation(coins):
 #     filename = "%s/tmp/alllastcoins.json" % currentpath
@@ -83,4 +84,8 @@ commons.initCanalyzer()
 
 coinmarketcap = Pymarketcap()
 coinsID = commons.getCoins4Markets(coinmarketcap)
-commons.importCoinsHistorical(coinmarketcap,coinsID)
+
+nbdays = mylib.conf.yanalyzer['import']['nbdays']
+drange = mylib.date.getDateRangeFromEnd(nbdays,'1D')
+
+commons.importCoinsHistorical(coinmarketcap,coinsID,drange[::-1])

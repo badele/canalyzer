@@ -80,26 +80,21 @@ def getCoins4Markets(coinmarketcap):
 
     return coins
 
-def importCoinsHistorical(coinmarketcap,coins):
-    for coin in coins:
-        # Get period from import:daily yaml parameter
-        oneday = int(mylib.date.humanDurationToSecond("1d"))
-        nbdays = int(mylib.date.humanDurationToSecond(mylib.conf.yanalyzer['import']['nbdays']))
-        ts_end = int(mylib.date.getNow())
-        ts_start = int(ts_end - nbdays)
-
-        # Download coins info
-        for idx_ts in range(ts_end, ts_start, -oneday):
-            dt = datetime.datetime.fromtimestamp(int(idx_ts))
-
+def importCoinsHistorical(coinmarketcap,coins,daterange):
+    counterdate = len(daterange)
+    for idx_date in daterange:
+        counterdate -= 1
+        countercoin = len(coins)
+        for coin in coins:
+            countercoin -= 1
             # If same date, not send to cache
-            tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=dt.date()
+            tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=idx_date.date()
             coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
             if not os.path.exists(coinpath):
                 os.makedirs(coinpath)
 
-            dt_start = dt.replace(hour=0,minute=0, second=0,microsecond=0)
-            dt_end = dt.replace(hour=23,minute=59, second=59,microsecond=999999)
+            dt_start = idx_date.replace(hour=0,minute=0, second=0,microsecond=0)
+            dt_end = idx_date.replace(hour=23,minute=59, second=59,microsecond=999999)
 
             datetext = "%02d-%02d-%02d" % (dt_start.year, dt_start.month, dt_start.day)
             filename = "%s/daily_%s.json" % (coinpath, datetext)
@@ -107,7 +102,7 @@ def importCoinsHistorical(coinmarketcap,coins):
                 print ("File exist in the cache for %s(%s)" % (coin, datetext))
                 continue
 
-            print ("Download %s stock info for %s" % (coin, datetext))
+            print ("C(%s)/D(%s) Download %s stock info for %s" % (countercoin, counterdate, coin, datetext))
             try:
                 datas = {'date':[]}
                 coininfo = coinmarketcap.graphs.currency(coin,dt_start,dt_end)
@@ -137,37 +132,51 @@ def importCoinsHistorical(coinmarketcap,coins):
             time.sleep(pausetime)
 
 
-def loadCoinHistorical(coin,nbdays):
-    # Get period from import:daily yaml parameter
-    oneday = int(mylib.date.humanDurationToSecond("1d"))
-    nbdays = int(mylib.date.humanDurationToSecond(nbdays))
-    ts_end = int(mylib.date.getNow())
-    ts_start = int(ts_end - nbdays)
+def loadCoinsHistorical(coins, drange):
 
-    # Download coins info
-    datas = []
-    for idx_ts in range(ts_end, ts_start, -oneday):
-        dt = datetime.datetime.fromtimestamp(int(idx_ts))
+    coinsID = coins
+    if type(coins) == str:
+        coinsID = [coins]
 
-        # If same date, not send to cache
-        tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=dt.date()
-        coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
-        if not os.path.exists(coinpath):
+
+    datas4coins = []
+    for coin in coinsID:
+        # Download coins info
+
+        datas4coin = []
+        for ddate in drange:
+            # If same date, not send to cache
+            tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
+            coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
+            if not os.path.exists(coinpath):
+                continue
+
+            datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
+            filename = "%s/daily_%s.json" % (coinpath, datetext)
+
+            if not os.path.exists(filename):
+                continue
+
+            # Read historical coin
+            df = pd.read_json(filename)
+            df['coin'] = coin
+            datas4coin.append(df)
+
+        if len(datas4coin) != len(drange):
+            print ("ERROR loadCoinsHistorical for %s" % coin)
             continue
 
-        dt_start = dt.replace(hour=0,minute=0, second=0,microsecond=0)
+        # Add coin datas
+        datas4coins.append(pd.concat(datas4coin))
 
-        datetext = "%02d-%02d-%02d" % (dt_start.year, dt_start.month, dt_start.day)
-        filename = "%s/daily_%s.json" % (coinpath, datetext)
 
-        df = pd.read_json(filename)
+    # Merge all historical coins
+    df = pd.concat(datas4coins)
 
-        datas.append(df)
-
-    df = pd.concat(datas)
-
+    # Reindex
     df.set_index('date', inplace=True)
     df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
     df = df.sort_index()
 
     return df
+

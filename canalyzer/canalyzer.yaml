@@ -8,16 +8,16 @@ select:
     - ETH
 
 import:
-  nbdays: 30d
+  nbdays: 90D
 
 cache:
-  duration: 60m
+  duration: 240m
 
 analyze:
   period:
     - dayly:
       period: 2d
-      resample: 24H
+      resample: 1H
 #    - weekly:
 #      period: 7d
 #      groupby: 1m

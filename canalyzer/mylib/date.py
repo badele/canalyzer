@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import time
 import datetime
+import pandas as pd
 
 def getNow():
     now = datetime.datetime.now()
@@ -9,18 +11,21 @@ def getNow():
 
     return ts
 
-def getFilenameDateRange(humanperiod):
-    seconds = int(humanDurationToSecond(humanperiod))
+def getDateRangeFromEnd(windows, humanperiod, enddate=None):
 
-    dt_end = datetime.datetime.now()
-    dt_start = dt_end - datetime.timedelta(seconds=seconds)
+    if not enddate:
+        enddate = datetime.datetime.now()
 
-    dt_start = dt_start.replace(hour=0, minute=0, second=0, microsecond=0)
-    dt_end = dt_end.replace(hour=0, minute=0, second=0, microsecond=0)
+    (end, start) = pd.date_range(start=enddate, periods=2, freq='-%s' % windows)
 
-    print (dt_start)
-    print (dt_end)
+    return getDateRangeFromStartEnd(start, end, humanperiod)
 
+
+def getDateRangeFromStartEnd(start, end, humanperiod):
+
+    return pd.date_range(start=start, end=end, freq=humanperiod,closed='right')
+
+#
 def humanDurationToSecond(duration):
 
     durations = {
