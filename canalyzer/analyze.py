@@ -231,7 +231,8 @@ def plotPrices(df):
 commons.initCanalyzer()
 coinmarketcap = Pymarketcap()
 coinsID = commons.getCoins4Markets(coinmarketcap)
-coinsID = coinsID[:3]
+coinsID = coinsID[:25]
+
 
 good = 0
 missing = 0
@@ -241,7 +242,13 @@ allcoins = {}
 nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
 resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
 drange = mylib.date.getDateRangeFromEnd(nbdays,'1D')
-df = commons.loadCoinsHistorical(coinsID, drange, '15min')
+
+datacoins = commons.loadCoinsHistorical(coinsID, drange, '15min')
+
+e = commons.extractColumn(datacoins,'price_usd')
+df = pd.DataFrame(e)
+df[:-1].plot(grid=True,legend=True)
+plt.show()
 
 df.to_html('/tmp/result.html')
 

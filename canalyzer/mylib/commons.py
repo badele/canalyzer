@@ -132,54 +132,63 @@ def importCoinsHistorical(coinmarketcap,coins,daterange):
             time.sleep(pausetime)
 
 
-def loadCoinsHistorical(coins, drange, freq='1H'):
+def loadCoinHistorical(coin, drange,freq='1H'):
 
-    coinsID = coins
-    if type(coins) == str:
-        coinsID = [coins]
-
-
-    datas4coins = []
-    for coin in coinsID:
-        # Download coins info
-
-        datas4coin = []
-        for ddate in drange:
-            # If same date, not send to cache
-            tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
-            coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
-            if not os.path.exists(coinpath):
-                continue
-
-            datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
-            filename = "%s/daily_%s.json" % (coinpath, datetext)
-
-            if not os.path.exists(filename):
-                continue
-
-            # Read historical coin
-            df = pd.read_json(filename)
-            df['coin'] = coin
-            datas4coin.append(df)
-
-        if len(datas4coin) != len(drange):
-            print ("ERROR loadCoinsHistorical for %s" % coin)
+    datas = []
+    for ddate in drange:
+        # If same date, not send to cache
+        tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
+        coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
+        if not os.path.exists(coinpath):
             continue
 
-        # Add coin datas
-        datas4coins.append(pd.concat(datas4coin))
+        datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
+        filename = "%s/daily_%s.json" % (coinpath, datetext)
 
+        if not os.path.exists(filename):
+            continue
+
+        # Read historical coin
+        df = pd.read_json(filename)
+
+        if len(df) == 0:
+            continue
+
+        df.set_index('date', inplace=True)
+        df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
+
+        # Resample and realign date
+        df = df.asfreq(freq=freq, method='bfill')
+        df.index = df.index.floor(freq)
+        datas.append(df)
 
     # Merge all historical coins
-    df = pd.concat(datas4coins)
+    df = pd.concat(datas)
 
     # Reindex
-    df.set_index('date', inplace=True)
-    df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
+    #df.set_index('date', inplace=True)
+    #
     df = df.sort_index()
-
-    df.to_html('/tmp/result.html')
-    df = df.asfreq(freq=freq, method='bfill')
 
     return df
 
+
+
+def loadCoinsHistorical(coins, drange, freq='1H'):
+
+    if type(coins) == str:
+        raise Exception("Please use coins array")
+
+
+    datas = dict()
+    for coin in coins:
+        datas[coin] = loadCoinHistorical(coin,drange,freq=freq)
+    return datas
+
+def extractColumn(datas,column):
+
+    extracted = dict()
+    for key in datas:
+        extracted[key] = datas[key][column]
+
+    return extracted
