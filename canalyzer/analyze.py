@@ -211,67 +211,42 @@ def perfForAllCoins(coinsID, start, end):
 
     return ({'gain':gain, 'perf':perf})
 
+def plotPoints(df):
+    g = df.groupby([pd.Grouper(freq=resample), 'coin'])
+    g = g.agg({'price_usd': ['first', 'last']})
+    g['gain'] = g['price_usd']['last'] - g['price_usd']['first']
+    g['direction'] = np.sign(g['gain'])
+
+    gdir = g['direction'].groupby([pd.Grouper(freq=resample, level='date')]).sum()
+    gdir[:-1].plot(legend=True)
+    plt.legend(['All coins direction'])
+    plt.show()
+
+def plotPrices(df):
+    g = df.groupby([pd.Grouper(freq=resample)]).agg({'price_usd': ['sum']})
+    g['price_usd']['sum'][:-1].plot(legend=True)
+    plt.legend(['All coins in $'])
+    plt.show()
+
 commons.initCanalyzer()
 coinmarketcap = Pymarketcap()
 coinsID = commons.getCoins4Markets(coinmarketcap)
+coinsID = coinsID[:3]
 
 good = 0
 missing = 0
 allcoins = {}
 
-# Prices graph
+# Parameters
 nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
 resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
-drange = mylib.date.getDateRangeFromEnd('29D','1D')
-df = commons.loadCoinsHistorical(coinsID, drange)
-g = df.groupby([pd.Grouper(freq=resample)]).agg({'price_usd': ['sum']})
-g['price_usd']['sum'][:-1].plot(legend=True)
-plt.legend(['All coins in $'])
-plt.show()
+drange = mylib.date.getDateRangeFromEnd(nbdays,'1D')
+df = commons.loadCoinsHistorical(coinsID, drange, '15min')
 
-# # Points graphs
-# nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
-# resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
-# drange = mylib.date.getDateRangeFromEnd('9D','1D')
-# df = commons.loadCoinsHistorical(coinsID, drange)
-# g = df.groupby(['coin', pd.Grouper(freq=resample)]).agg({'price_usd': ['sum']})
-# previous = g.shift(1)['price_usd']['sum']
-# g['gain'] = g['price_usd']['sum'] - previous
-# g['perf'] = ((g['price_usd']['sum'] / previous) - 1) * 100
-# g = g.reset_index().pivot(index='date', columns='coin', values='perf')
-# g['perf'][:-1].plot(legend=True)
-# #plt.legend(['All coins in points'])
-# plt.show()
+df.to_html('/tmp/result.html')
 
-#g = g.groupby([pd.Grouper(freq=resample)]).agg({'perf': ['sum']})
+# Points graphs
+plotPoints(df)
 
-
-
-# print (result)
-# sys.exit()
-#
-# for coin in coinsID:
-#
-#     try:
-#         result = AnalyseCoins(coin, start,end, resample)
-#         if len(result)==2:
-#             good += 1
-#             allcoins[coin] = result['price']['close']
-#         else:
-#             missing += 1
-#
-#     except (KeyboardInterrupt, SystemExit):
-#         raise
-#
-#     # except Exception:
-#     #     missing += 1
-#
-# previous = pd.DataFrame(allcoins).iloc[0].sum()
-# now = pd.DataFrame(allcoins).iloc[1].sum()
-# gain = now - previous
-# perf = ((now / previous) - 1) * 100
-#
-# print ("%s coins from market (%s missing)" % (good, missing))
-# print ("Gain: %.02f $" % gain)
-# print ("perf: %0.2f %%" % perf)
-#
+# Prices graph
+plotPrices(df)

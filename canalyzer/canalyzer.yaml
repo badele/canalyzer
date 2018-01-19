@@ -16,7 +16,7 @@ cache:
 analyze:
   period:
     - dayly:
-      period: 2d
+      period: 15d
       resample: 1H
 #    - weekly:
 #      period: 7d

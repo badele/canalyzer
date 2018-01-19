@@ -132,7 +132,7 @@ def importCoinsHistorical(coinmarketcap,coins,daterange):
             time.sleep(pausetime)
 
 
-def loadCoinsHistorical(coins, drange):
+def loadCoinsHistorical(coins, drange, freq='1H'):
 
     coinsID = coins
     if type(coins) == str:
@@ -177,6 +177,9 @@ def loadCoinsHistorical(coins, drange):
     df.set_index('date', inplace=True)
     df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
     df = df.sort_index()
+
+    df.to_html('/tmp/result.html')
+    df = df.asfreq(freq=freq, method='bfill')
 
     return df
 
