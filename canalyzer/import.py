@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 
 from pymarketcap import Pymarketcap
 
@@ -82,10 +83,9 @@ from mylib import commons
 
 commons.initCanalyzer()
 
-coinmarketcap = Pymarketcap()
-coinsID = commons.getCoins4Markets(coinmarketcap)
+coinsID = commons.getCoins4Markets()
 
 nbdays = mylib.conf.yanalyzer['import']['nbdays']
 drange = mylib.date.getDateRangeFromEnd(nbdays,'1D')
 
-commons.importCoinsHistorical(coinmarketcap,coinsID,drange[::-1])
+commons.importCoinsHistorical(coinsID,drange[::-1])

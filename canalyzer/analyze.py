@@ -4,6 +4,7 @@
 import os
 import sys
 import datetime
+import collections
 
 # Libs
 import yaml
@@ -14,6 +15,7 @@ from pymarketcap import Pymarketcap
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pandas.tseries.frequencies import to_offset
 
 # Canalyzer
 import mylib
@@ -228,29 +230,191 @@ def plotPrices(df):
     plt.legend(['All coins in $'])
     plt.show()
 
+# def analyzeDataPerf(data, compare):
+#     data['previous'] = data['price_usd'].shift(compare)
+#     data['gain'] = data['price_usd'] - data['previous']
+#     data['perf'] = ((data['price_usd'] / data['previous']) - 1) * 100
+#     data['perf_direction'] = np.sign(data['perf'])
+#
+#     data.to_csv('/tmp/result.csv')
+#     data.to_html('/tmp/result.html')
+#
+#     return data
+
+def plotPerfCoins():
+    # Parameters
+    nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
+    resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
+    compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
+
+    # Compute periods comparation offset
+    now = mylib.date.getNow()
+    coffset = pd.Timedelta('1D') / np.timedelta64(1, 's')
+    dt_now = datetime.datetime.fromtimestamp(int(now))
+    dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
+    periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
+
+    # Plot perf
+    drange = mylib.date.getDateRangeFromEnd(nbdays, '1D')
+    datascoins = dict()
+    for coin in coins:
+        data = commons.loadCoinHistorical(coin, drange, freq=resample)
+        if len(data) > 0:
+            data = analyzeDataPerf(data, periods)
+            datascoins[coin] = data
+
+    df = pd.DataFrame(commons.extractColumn(datascoins, 'perf_direction'))
+    df[:-1].plot(subplots=True, grid=True, legend=True, kind='area', stacked=False)
+    plt.show()
+
+def getPerfCoinsDirection():
+    # Parameters
+    nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
+    resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
+    compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
+
+    # Compute periods comparation offset
+    now = mylib.date.getNow()
+    coffset = pd.Timedelta('1D') / np.timedelta64(1, 's')
+    dt_now = datetime.datetime.fromtimestamp(int(now))
+    dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
+    periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
+
+    # Plot perf
+    drange = mylib.date.getDateRangeFromEnd(nbdays, '1D')
+    datascoins = dict()
+    for coin in coins:
+        data = commons.loadCoinHistorical(coin, drange, freq=resample)
+        if len(data) > 0:
+            data = analyzeDataPerf(data, periods)
+            datascoins[coin] = data
+
+
+    df = pd.DataFrame(commons.extractColumn(datascoins, 'perf'))
+    return df
+
+def getcoinsPerf24h():
+    # Parameters
+    rewind = mylib.conf.yanalyzer['analyze']['period'][0]['rewind']
+    resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
+    #compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
+
+
+    # Compute periods comparation offset
+    now = mylib.date.getNow()
+    coffset = pd.Timedelta(resample) / np.timedelta64(1, 's')
+    dt_now = datetime.datetime.fromtimestamp(int(now))
+    dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
+    periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
+
+    datascoins = dict()
+    for coin in coins:
+        print('coin %s' % coin)
+        data = commons.loadCoinHistorical2(coin, rewind=rewind, resample=resample)
+        if len(data) > 0:
+            #data = analyzeDataPerf(data, periods)
+            datascoins[coin] = data
+
+    df = pd.DataFrame(commons.extractColumn(datascoins, 'perf'))
+    return df
+
+def getcoinsPerf24h2():
+    # Parameters
+    rewind = mylib.conf.yanalyzer['analyze']['global']['rewind']
+    resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
+    #compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
+
+
+    # Compute periods comparation offset
+    now = mylib.date.getNow()
+    coffset = pd.Timedelta(resample) / np.timedelta64(1, 's')
+    dt_now = datetime.datetime.fromtimestamp(int(now))
+    dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
+    periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
+
+    datascoins = dict()
+    for coin in coins:
+        print('coin %s' % coin)
+        data = commons.loadCoinHistorical2(coin, rewind=rewind, resample=resample)
+        if len(data) > 0:
+            #data = analyzeDataPerf(data, periods)
+            datascoins[coin] = data
+
+    df = pd.DataFrame(commons.extractColumn(datascoins, 'perf'))
+    return df
+
+def summaryCoins(coins):
+    # Get max period for loading data
+    rewinds = []
+    for period in mylib.conf.yanalyzer['analyze']['period']:
+        rewinds.append(pd.Timedelta(period['rewind']))
+    maxrewind = sorted(rewinds)[-1]
+
+    # Sort period column
+    periodcolumns = collections.OrderedDict()
+    for period in mylib.conf.yanalyzer['analyze']['period']:
+        periodcolumns[pd.Timedelta(period['resample'])] = period['name']
+
+    datas = commons.loadAllCoinsHistorical3(coins, maxrewind)
+
+    periods = {}
+    for period in mylib.conf.yanalyzer['analyze']['period']:
+        print ("analyze %s with %s resample period" % (period['name'], period['resample']))
+
+        periods[period['name']] = commons.resampleAllCoinsHistorical(datas, period['rewind'], period['resample'])
+
+    column = {'firstdate':{}, 'lastdate': {}}
+    idxlastprice = list(periodcolumns)[0]
+    for period in periods:
+        columnperf = "perf_%s" % period
+        column[columnperf] = {}
+        for coin in periods[period]:
+
+            # Compute coins performance
+            column[columnperf][coin] = {}
+
+            # Search the first date for coin
+            if coin not in column['firstdate']:
+                column['firstdate'][coin] = periods[period][coin].index[0]
+            column['firstdate'][coin] = max(periods[period][coin].index[0],column['firstdate'][coin])
+
+            # Search the last date for coin
+            if coin not in column['lastdate']:
+                column['lastdate'][coin] = periods[period][coin].index[-1]
+            column['lastdate'][coin] = max(periods[period][coin].index[-1],column['lastdate'][coin])
+
+            column[columnperf][coin] = periods[period][coin]['perf'][-1]
+
+    columnname = []
+    for period in periodcolumns:
+        columnname.append('perf_%s' % periodcolumns[period])
+    columnname.append('firstdate')
+    columnname.append('lastdate')
+
+    print (pd.DataFrame(column,columns=columnname))
+
 commons.initCanalyzer()
-coinmarketcap = Pymarketcap()
-coinsID = commons.getCoins4Markets(coinmarketcap)
-coinsID = coinsID[:25]
+coins = commons.getCoins4Markets()
+coins = coins[:10]
 
 
 good = 0
 missing = 0
 allcoins = {}
 
-# Parameters
-nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
-resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
-drange = mylib.date.getDateRangeFromEnd(nbdays,'1D')
+summaryCoins(coins)
+sys.exit()
 
-datacoins = commons.loadCoinsHistorical(coinsID, drange, '15min')
+df = getcoinsPerf24h2()
+print ("Last datas: %s" % df.index[-1])
+df.tail(1)
+print (df)
+sys.exit()
 
-e = commons.extractColumn(datacoins,'price_usd')
-df = pd.DataFrame(e)
-df[:-1].plot(grid=True,legend=True)
+df[:-1].plot(subplots=True, grid=True, legend=True, kind='area', stacked=False)
+plt.title('all coins perf for %s coins' % len(coins))
+#plt.legend(['perf in %'])
 plt.show()
-
-df.to_html('/tmp/result.html')
 
 # Points graphs
 plotPoints(df)

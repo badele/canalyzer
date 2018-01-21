@@ -4,6 +4,7 @@ import os
 import simplejson as json
 
 import mylib.date
+from mylib import commons
 
 def saveto(filename, content):
     """Save content to file"""
@@ -23,14 +24,20 @@ def saveJSON(filename, content):
 
     json.dump(content, fp=open(filename, 'w'), indent=4)
 
-def loadJSON(filename,cacheduration=0):
+def loadJSON(filename):
+    return json.load(open(filename, 'r'))
+
+
+def isInCache(filename):
     if not os.path.exists(filename):
-        return None
+        return False
 
     now = mylib.date.getNow()
     ftime = os.path.getmtime(filename)
 
-    if cacheduration == 0 or ftime + cacheduration > now:
-        return json.load(open(filename, 'r'))
+    cacheduration = commons.getCacheDuration()
+    if ftime + cacheduration < now:
+        #os.remove(filename)
+        return False
 
-    return None
+    return True

@@ -9,24 +9,44 @@ select:
 
 import:
   nbdays: 90D
+  ignore:
+   - DOV
+   - EBTCNEW
+   - BQX
 
 cache:
-  duration: 240m
+  duration: 3H
 
 analyze:
   period:
-    - dayly:
-      period: 15d
-      resample: 1H
-#    - weekly:
-#      period: 7d
-#      groupby: 1m
+    - hourly:
+      name: "1H"
+      rewind: 1h
+      resample: 1h
+    - daily:
+      name: "24H"
+      rewind: 4d
+      resample: 1d
+    - weekly:
+      name: "1W"
+      rewind: 7d
+      resample: 7d
 #    - monthly:
-#      period: 30d
-#      groupby: 1m
+#      name: "1M"
+#      rewind: 30d
+#      resample: 30d
 #    - quarterly:
-#      period: 90d
-#      groupby: 1m
+#      name: "3M"
+#      rewind: 90d
+#      resample: 90d
+#    - half:
+#      name: "6M"
+#      rewind: 180d
+#      resample: 180d
+#    - yearly:
+#      name: "1Y"
+#      rewind: 365d
+#      resample: 365d
 
 # analyze:
 #  - ETH

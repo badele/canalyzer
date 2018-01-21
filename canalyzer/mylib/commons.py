@@ -9,6 +9,7 @@ import datetime
 import mylib.conf
 import mylib.file
 
+import numpy as np
 import pandas as pd
 
 # Check configuration filename
@@ -39,9 +40,9 @@ def initCanalyzer():
     pd.set_option('display.float_format', lambda x: '%.5f' % x)
 
 
-def getStoragePath(pathname, sendCache=False):
+def getStoragePath(pathname, inccache=False):
     storagepath=cachepath
-    if not sendCache:
+    if not inccache:
         storagepath = tmppath
 
     if pathname == "":
@@ -49,24 +50,25 @@ def getStoragePath(pathname, sendCache=False):
     else:
         return "%s/%s/%s" % (workdir, storagepath, pathname)
 
-def getCacheDuration(cachename):
-    cacheduration = mylib.date.humanDurationToSecond(mylib.conf.yanalyzer['cache']['duration'])
+def getCacheDuration():
+    cacheduration = int(pd.Timedelta(mylib.conf.yanalyzer['cache']['duration'])/ np.timedelta64(1, 's'))
 
     return cacheduration
 
-def getCoins4Markets(coinmarketcap):
+def getCoins4Markets():
     """
     Get available coins for the markets from canalyzer.yaml file
     """
     filename = "%s/coins2markets.json" % getStoragePath(rootpath)
-    coins2markets = mylib.file.loadJSON(filename,getCacheDuration('global'))
-    if coins2markets:
+
+    if mylib.file.isInCache(filename):
         print ("Get coins4markets from cache")
-        return coins2markets
+        return mylib.file.loadJSON(filename)
 
     coins = []
     for market in mylib.conf.yanalyzer['select']['market']:
         print ("Get coins for %s market" % market)
+        coinmarketcap = mylib.conf.initCoinMarketCap()
         exchanges = coinmarketcap.exchange(market)
         for currencycoin in exchanges:
             m = re.match(r"([A-Z]+)\-([A-Z]+)",currencycoin['market'])
@@ -76,20 +78,24 @@ def getCoins4Markets(coinmarketcap):
 
                 if currency in mylib.conf.yanalyzer['select']['currency']:
                     coins.append(coin)
-    mylib.file.saveJSON(filename, coins)
 
-    return coins
+    ignore = mylib.conf.yanalyzer['import']['ignore']
+    filtered = [r for r in coins if r not in ignore]
+    mylib.file.saveJSON(filename, filtered)
 
-def importCoinsHistorical(coinmarketcap,coins,daterange):
+    return filtered
+
+def importCoinsHistorical(coins,daterange):
     counterdate = len(daterange)
     for idx_date in daterange:
         counterdate -= 1
         countercoin = len(coins)
         for coin in coins:
             countercoin -= 1
-            # If same date, not send to cache
-            tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=idx_date.date()
-            coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
+            # If same date, not send to canalyzer-cache
+
+            inccache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date() != idx_date.date()
+            coinpath = "%s/%s" % (getStoragePath(coinspath, inccache), coin.upper())
             if not os.path.exists(coinpath):
                 os.makedirs(coinpath)
 
@@ -98,13 +104,22 @@ def importCoinsHistorical(coinmarketcap,coins,daterange):
 
             datetext = "%02d-%02d-%02d" % (dt_start.year, dt_start.month, dt_start.day)
             filename = "%s/daily_%s.json" % (coinpath, datetext)
-            if os.path.exists(filename):
-                print ("File exist in the cache for %s(%s)" % (coin, datetext))
-                continue
+
+            if inccache:
+                # Check if exist in canalyzer-cache
+                if os.path.exists(filename):
+                    print ("File exist in canalyzer-cache for %s(%s)" % (coin, datetext))
+                    continue
+            else:
+                # See if temporary file need update
+                if mylib.file.isInCache(filename):
+                    print ("File exist in temporary cache for %s(%s)" % (coin, datetext))
+                    continue
 
             print ("C(%s)/D(%s) Download %s stock info for %s" % (countercoin, counterdate, coin, datetext))
             try:
                 datas = {'date':[]}
+                coinmarketcap = mylib.conf.initCoinMarketCap()
                 coininfo = coinmarketcap.graphs.currency(coin,dt_start,dt_end)
 
                 # Add date column and remove timestam on all keys
@@ -162,28 +177,161 @@ def loadCoinHistorical(coin, drange,freq='1H'):
         df.index = df.index.floor(freq)
         datas.append(df)
 
-    # Merge all historical coins
-    df = pd.concat(datas)
 
-    # Reindex
-    #df.set_index('date', inplace=True)
-    #
+    if len(datas) == 0:
+        return pd.DataFrame()
+
+    df = pd.concat(datas)
     df = df.sort_index()
 
     return df
 
+def loadCoinHistorical2(coin, rewind, resample):
+
+    rewindfiledate = max(int(pd.Timedelta('1d')/ np.timedelta64(1, 's')), int(pd.Timedelta(rewind) / np.timedelta64(1, 's') * 2))
+    rangefiledate = mylib.date.getDateRangeFromEnd('%ss' % rewindfiledate, '1D')
+
+    datas = []
+    for ddate in rangefiledate:
+        # If same date, not send to cache
+        tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
+        coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
+        if not os.path.exists(coinpath):
+            continue
+
+        datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
+        filename = "%s/daily_%s.json" % (coinpath, datetext)
+
+        if not os.path.exists(filename):
+            continue
+
+        # Read historical coin
+        df = pd.read_json(filename)
+
+        if len(df) == 0:
+            continue
+
+        df.set_index('date', inplace=True)
+        #df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
+        #df.index.tz = None
+
+        #r.index = r.index.floor(freq)
+        datas.append(df)
+
+    if len(datas) == 0:
+        return pd.DataFrame()
+
+    df = pd.concat(datas)
+    df = df.sort_index()
+
+    # Resample and realign date
+    r = df.resample(resample)
+    r = r.agg({
+        'price_usd': ['first', 'last', 'min', 'max'],
+        'volume_usd': ['mean']
+    })
+
+    r['gain'] = r['price_usd']['last'] - r['price_usd']['first']
+    r['perf'] = ((r['price_usd']['last'] / r['price_usd']['first']) - 1) * 100
+
+    # r.columns = r.columns.droplevel()
+    r = r.rename({'price_usd': 'price', 'volume_usd': 'volume'}, axis='columns')
+    r.columns = ['first','last','low','high','vol24','gain', 'perf']
+
+    # dfilter = datetime.datetime.now()
+    # filter = pd.date_range(start=dfilter,periods=3, freq='-%s' % resample)[2]
+    # print(pd.date_range(start=dfilter,periods=3, freq='-%s' % resample))
+    # print(r[r.index >= filter])
+
+    return r
 
 
-def loadCoinsHistorical(coins, drange, freq='1H'):
+def loadCoinHistorical3(coin, rewind):
 
-    if type(coins) == str:
-        raise Exception("Please use coins array")
+    # Minimal oneday
 
+    minimalrewind = max(int(pd.Timedelta('1d')/ np.timedelta64(1, 's')), int(pd.Timedelta(rewind) / np.timedelta64(1, 's')))
+    rangefiledate = mylib.date.getDateRangeFromEnd('%ss' % minimalrewind, '1D')
 
-    datas = dict()
+    datas = []
+    for ddate in rangefiledate:
+        # If same date, not send to cache
+        tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
+        coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
+        if not os.path.exists(coinpath):
+            continue
+
+        datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
+        filename = "%s/daily_%s.json" % (coinpath, datetext)
+
+        if not os.path.exists(filename):
+            continue
+
+        # Read historical coin
+        df = pd.read_json(filename)
+
+        if len(df) == 0:
+            continue
+
+        df.set_index('date', inplace=True)
+        #df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
+        #df.index.tz = None
+
+        #r.index = r.index.floor(freq)
+        datas.append(df)
+
+    if len(datas) == 0:
+        return pd.DataFrame()
+
+    df = pd.concat(datas)
+    df = df.sort_index()
+
+    return df
+
+def loadAllCoinsHistorical3(coins, rewind):
+
+    datas = {}
     for coin in coins:
-        datas[coin] = loadCoinHistorical(coin,drange,freq=freq)
+        datas[coin] = loadCoinHistorical3(coin,rewind)
+
     return datas
+
+def resampleAllCoinsHistorical(datas,rewind, resample):
+
+    result = {}
+    for coin in datas:
+        df = datas[coin]
+
+        # Continue if no data in Dataframe
+        if len(df) == 0:
+            continue
+
+        # filter data
+        lastdate = df.index[-1]
+        rewinddate = lastdate - pd.Timedelta(rewind)
+        f = df[df.index >= rewinddate]
+
+        # No more datas for computing summary
+        if len(f)<1:
+            continue
+
+        r = f.resample(resample)
+        r = r.agg({
+            'price_usd': ['first', 'last', 'min', 'max'],
+            'volume_usd': ['mean']
+        })
+
+
+        r['gain'] = r['price_usd']['last'] - r['price_usd']['first']
+        r['perf'] = ((r['price_usd']['last'] / r['price_usd']['first']) - 1) * 100
+
+        # r.columns = r.columns.droplevel()
+        r = r.rename({'price_usd': 'price', 'volume_usd': 'volume'}, axis='columns')
+        r.columns = ['first','last','low','high','vol24','gain', 'perf']
+
+        result[coin] = r
+
+    return result
 
 def extractColumn(datas,column):
 
