@@ -20,6 +20,7 @@ from pandas.tseries.frequencies import to_offset
 # Canalyzer
 import mylib
 import mylib.date
+import mylib.file
 from mylib import commons
 
 # def analyseAllCoinsPerf(coins,nbdays=1):
@@ -343,8 +344,15 @@ def getcoinsPerf24h2():
     df = pd.DataFrame(commons.extractColumn(datascoins, 'perf'))
     return df
 
+def color_negative_red(val):
+    color = 'black'
+    if type(val) == float and val < 0:
+        color = 'red'
+
+    return 'color: %s' % color
+
 def summaryCoins(coins):
-    # Get max period for loading data
+    # Get max rewind period for loading data
     rewinds = []
     for period in mylib.conf.yanalyzer['analyze']['period']:
         rewinds.append(pd.Timedelta(period['rewind']))
@@ -357,18 +365,29 @@ def summaryCoins(coins):
 
     datas = commons.loadAllCoinsHistorical3(coins, maxrewind)
 
+    # Resample all coins historical datas
     periods = {}
     for period in mylib.conf.yanalyzer['analyze']['period']:
         print ("analyze %s with %s resample period" % (period['name'], period['resample']))
-
         periods[period['name']] = commons.resampleAllCoinsHistorical(datas, period['rewind'], period['resample'])
 
-    column = {'firstdate':{}, 'lastdate': {}}
-    idxlastprice = list(periodcolumns)[0]
+    # Compute columns values
+    minperiodidx = list(periodcolumns)[0]
+    minperiodname = periodcolumns[pd.Timedelta(minperiodidx)]
+    column = {'firstdate':{}, 'lastdate': {}, 'nbdays': {}}
     for period in periods:
         columnperf = "perf_%s" % period
         column[columnperf] = {}
+        if minperiodname == period:
+            columnprice = "lastprice_%s" % minperiodname
+            column[columnprice] = {}
+
         for coin in periods[period]:
+            if len(periods[period][coin]) <= 0:
+                continue
+
+            if minperiodname == period:
+                column[columnprice][coin] = periods[period][coin]['last'][-1]
 
             # Compute coins performance
             column[columnperf][coin] = {}
@@ -376,33 +395,40 @@ def summaryCoins(coins):
             # Search the first date for coin
             if coin not in column['firstdate']:
                 column['firstdate'][coin] = periods[period][coin].index[0]
-            column['firstdate'][coin] = max(periods[period][coin].index[0],column['firstdate'][coin])
+            column['firstdate'][coin] = min(periods[period][coin].index[0],column['firstdate'][coin])
 
             # Search the last date for coin
             if coin not in column['lastdate']:
                 column['lastdate'][coin] = periods[period][coin].index[-1]
             column['lastdate'][coin] = max(periods[period][coin].index[-1],column['lastdate'][coin])
 
+            column['nbdays'][coin] = column['lastdate'][coin] - column['firstdate'][coin]
             column[columnperf][coin] = periods[period][coin]['perf'][-1]
 
     columnname = []
+    columnname.append("lastprice_%s" % minperiodname)
     for period in periodcolumns:
         columnname.append('perf_%s' % periodcolumns[period])
-    columnname.append('firstdate')
-    columnname.append('lastdate')
+    # columnname.append('firstdate')
+    # columnname.append('lastdate')
+    columnname.append('nbdays')
 
-    print (pd.DataFrame(column,columns=columnname))
+    df = pd.DataFrame(column,columns=columnname)
+    return df
 
 commons.initCanalyzer()
 coins = commons.getCoins4Markets()
-coins = coins[:10]
+#coins = coins[:10]
 
 
 good = 0
 missing = 0
 allcoins = {}
 
-summaryCoins(coins)
+df = summaryCoins(coins)
+print (df)
+s = df.style.applymap(color_negative_red)
+mylib.file.saveto('/tmp/result.html',str(s.render()).encode())
 sys.exit()
 
 df = getcoinsPerf24h2()

@@ -248,8 +248,9 @@ def loadCoinHistorical2(coin, rewind, resample):
 
 def loadCoinHistorical3(coin, rewind):
 
-    # Minimal oneday
+    print ("Load historical data for %s coin" % coin)
 
+    # Minimal oneday
     minimalrewind = max(int(pd.Timedelta('1d')/ np.timedelta64(1, 's')), int(pd.Timedelta(rewind) / np.timedelta64(1, 's')))
     rangefiledate = mylib.date.getDateRangeFromEnd('%ss' % minimalrewind, '1D')
 
@@ -329,7 +330,11 @@ def resampleAllCoinsHistorical(datas,rewind, resample):
         r = r.rename({'price_usd': 'price', 'volume_usd': 'volume'}, axis='columns')
         r.columns = ['first','last','low','high','vol24','gain', 'perf']
 
-        result[coin] = r
+        selected = r.index[0].date() <= rewinddate.date()
+        if selected:
+            result[coin] = r
+        else:
+            result[coin] = pd.DataFrame()
 
     return result
 
