@@ -351,12 +351,16 @@ def color_negative_red(val):
 
     return 'color: %s' % color
 
-def summaryCoins(coins):
+def getMaxRewind():
     # Get max rewind period for loading data
     rewinds = []
     for period in mylib.conf.yanalyzer['analyze']['period']:
         rewinds.append(pd.Timedelta(period['rewind']))
     maxrewind = sorted(rewinds)[-1]
+
+    return maxrewind
+
+def summaryCoins(coins):
 
     # Sort period column
     periodcolumns = collections.OrderedDict()
@@ -416,17 +420,80 @@ def summaryCoins(coins):
     df = pd.DataFrame(column,columns=columnname)
     return df
 
+def mySummaryCoin(df, rewind, resample):
+    filtered = mylib.commons.filterHistorical(df, rewind)
+    resampled = mylib.commons.resampleHistorical(filtered, resample)
+    last = resampled.tail(1)
+
+    # Compute missing datas
+    now = datetime.datetime.now()
+    lastdate = filtered.index[-1]
+    firstdate = filtered.index[0]
+    td_resample = pd.Timedelta(resample)
+    if td_resample < pd.Timedelta('0d'):
+        td_resample = pd.Timedelta('0d')
+    missingbefore = td_resample - (lastdate - firstdate)
+    missingafter = now - lastdate
+
+
+    # Create dict/pandas
+    column = collections.OrderedDict(
+        {
+        'coin': last['coin'],
+        'firstprice': last['last'],
+        'lastprice': last['last'],
+        'gain': last['last'] - last['first'],
+        'perf': ((last['last'] / last['first']) - 1) * 100,
+        'firstdate': firstdate,
+        'lastdate': lastdate,
+        'missingbefore': missingbefore,
+        'missingafter': missingafter
+        }
+    )
+
+    return column
+
 commons.initCanalyzer()
 coins = commons.getCoins4Markets()
-#coins = coins[:10]
+coins = coins[:5]
 
 
 good = 0
 missing = 0
 allcoins = {}
 
+# Init summariescoins dict
+summariescoins = collections.OrderedDict({
+    'coin': collections.OrderedDict(),
+    'firstprice': collections.OrderedDict(),
+    'lastprice': collections.OrderedDict(),
+    'gain': collections.OrderedDict(),
+    'perf': collections.OrderedDict(),
+    'firstdate': collections.OrderedDict(),
+    'lastdate': collections.OrderedDict(),
+    'missingbefore': collections.OrderedDict(),
+    'missingafter':collections.OrderedDict()
+}
+)
+
+maxrewind = getMaxRewind()
+for coin in coins:
+    df = mylib.commons.loadCoinHistorical3(coin, maxrewind)
+    summary = mySummaryCoin(df, '15d','7d')
+
+    for key, value in summary.items():
+        if coin not in summariescoins[key]:
+            summariescoins[key][coin] = []
+        summariescoins[key][coin].append(value)
+
+print (summariescoins)
+df = pd.DataFrame(summariescoins)
+print(df)
+sys.exit()
+
+# Summary Coins
 df = summaryCoins(coins)
-print (df)
+print (df.to_dict())
 s = df.style.applymap(color_negative_red)
 mylib.file.saveto('/tmp/result.html',str(s.render()).encode())
 sys.exit()

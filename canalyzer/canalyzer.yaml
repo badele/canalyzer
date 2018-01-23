@@ -35,18 +35,18 @@ analyze:
       name: "1M"
       rewind: 40d
       resample: 30d
-    - quarterly:
-      name: "3M"
-      rewind: 90d
-      resample: 90d
-    - half:
-      name: "6M"
-      rewind: 180d
-      resample: 180d
-    - yearly:
-      name: "1Y"
-      rewind: 365d
-      resample: 365d
+#    - quarterly:
+#      name: "3M"
+#      rewind: 90d
+#      resample: 90d
+#    - half:
+#      name: "6M"
+#      rewind: 180d
+#      resample: 180d
+#    - yearly:
+#      name: "1Y"
+#      rewind: 365d
+#      resample: 365d
 
 # analyze:
 #  - ETH

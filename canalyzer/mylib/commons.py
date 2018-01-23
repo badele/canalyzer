@@ -55,6 +55,7 @@ def getCacheDuration():
 
     return cacheduration
 
+
 def getCoins4Markets():
     """
     Get available coins for the markets from canalyzer.yaml file
@@ -285,6 +286,7 @@ def loadCoinHistorical3(coin, rewind):
         return pd.DataFrame()
 
     df = pd.concat(datas)
+    df['coin'] = coin
     df = df.sort_index()
 
     return df
@@ -296,6 +298,41 @@ def loadAllCoinsHistorical3(coins, rewind):
         datas[coin] = loadCoinHistorical3(coin,rewind)
 
     return datas
+
+
+def filterHistorical(df,rewind):
+
+    # Continue if no data in Dataframe
+    if len(df) == 0:
+        return pd.DataFrame()
+
+    # filter data
+    lastdate = df.index[-1]
+    rewinddate = lastdate - pd.Timedelta(rewind)
+    f = df[df.index >= rewinddate]
+
+    return f
+
+
+def resampleHistorical(df, resample):
+
+    r = df.resample(resample)
+    r = r.agg({
+        'coin': ['last'],
+        'price_usd': ['first', 'last', 'min', 'max'],
+        'volume_usd': ['mean']
+    })
+
+
+    r['gain'] = r['price_usd']['last'] - r['price_usd']['first']
+    r['perf'] = ((r['price_usd']['last'] / r['price_usd']['first']) - 1) * 100
+
+    # r.columns = r.columns.droplevel()
+    r = r.rename({'price_usd': 'price', 'volume_usd': 'volume'}, axis='columns')
+    r.columns = ['coin', 'first','last','low','high','vol24','gain', 'perf']
+
+    return r
+
 
 def resampleAllCoinsHistorical(datas,rewind, resample):
 
