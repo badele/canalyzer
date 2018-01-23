@@ -436,22 +436,21 @@ def mySummaryCoin(df, rewind, resample):
     missingafter = now - lastdate
 
 
-    # Create dict/pandas
-    column = collections.OrderedDict(
+    df = pd.DataFrame(
         {
-        'coin': last['coin'],
-        'firstprice': last['last'],
-        'lastprice': last['last'],
-        'gain': last['last'] - last['first'],
-        'perf': ((last['last'] / last['first']) - 1) * 100,
-        'firstdate': firstdate,
-        'lastdate': lastdate,
-        'missingbefore': missingbefore,
-        'missingafter': missingafter
+            'coin': last['coin'],
+            'firstprice': last['last'],
+            'lastprice': last['last'],
+            'gain': last['last'] - last['first'],
+            'perf': ((last['last'] / last['first']) - 1) * 100,
+            'firstdate': firstdate,
+            'lastdate': lastdate,
+            'missingbefore': missingbefore,
+            'missingafter': missingafter
         }
     )
 
-    return column
+    return df
 
 commons.initCanalyzer()
 coins = commons.getCoins4Markets()
@@ -462,33 +461,14 @@ good = 0
 missing = 0
 allcoins = {}
 
-# Init summariescoins dict
-summariescoins = collections.OrderedDict({
-    'coin': collections.OrderedDict(),
-    'firstprice': collections.OrderedDict(),
-    'lastprice': collections.OrderedDict(),
-    'gain': collections.OrderedDict(),
-    'perf': collections.OrderedDict(),
-    'firstdate': collections.OrderedDict(),
-    'lastdate': collections.OrderedDict(),
-    'missingbefore': collections.OrderedDict(),
-    'missingafter':collections.OrderedDict()
-}
-)
-
+summariescoins = []
 maxrewind = getMaxRewind()
 for coin in coins:
     df = mylib.commons.loadCoinHistorical3(coin, maxrewind)
-    summary = mySummaryCoin(df, '15d','7d')
+    summariescoins.append(mySummaryCoin(df, '15d','7d'))
 
-    for key, value in summary.items():
-        if coin not in summariescoins[key]:
-            summariescoins[key][coin] = []
-        summariescoins[key][coin].append(value)
-
-print (summariescoins)
-df = pd.DataFrame(summariescoins)
-print(df)
+df = pd.concat(summariescoins)
+print (df)
 sys.exit()
 
 # Summary Coins
