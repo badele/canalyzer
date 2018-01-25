@@ -17,6 +17,17 @@ import:
 cache:
   duration: 3H
 
+summary:
+  - allperf:
+    - name: "Coins performance"
+    - function: perfSummaries
+    - columns:
+      - perf_1H
+      - perf_1D
+
+#      firstdate_1H  firstprice_1H  gain_1H         lastdate_1H  lastprice_1H missingafter_1H   missingbefore_1H  perf_1H        firstdate_1D  firstprice_1D  gain_1D         lastdate_1D
+#      lastprice_1D missingafter_1D missingbefore_1D  perf_1D
+
 analyze:
   period:
     - hourly:

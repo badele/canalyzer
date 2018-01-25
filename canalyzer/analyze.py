@@ -344,12 +344,24 @@ def getcoinsPerf24h2():
     df = pd.DataFrame(commons.extractColumn(datascoins, 'perf'))
     return df
 
-def color_negative_red(val):
-    color = 'black'
-    if type(val) == float and val < 0:
-        color = 'red'
+def column_color(col):
+    if 'perf_' in col.name:
+        is_neg = col < 0
+        return ['background-color: red' if v else 'background-color: green' for v in is_neg]
 
-    return 'color: %s' % color
+    if 'gain_' in col.name:
+        is_neg = col < 0
+        return ['color: red' if v else 'color: green' for v in is_neg]
+
+    return [''] * len(col)
+
+def negative_background(val):
+    bg = ''
+    if type(val) == float and val < 0:
+        bg = 'background-color: red'
+
+    return bg
+
 
 def getMaxRewind():
     # Get max rewind period for loading data
@@ -430,11 +442,13 @@ def mySummaryCoin(df, rewind, resample):
     lastdate = filtered.index[-1]
     firstdate = filtered.index[0]
     td_resample = pd.Timedelta(resample)
-    if td_resample < pd.Timedelta('0d'):
-        td_resample = pd.Timedelta('0d')
+    # if td_resample < pd.Timedelta('0d'):
+    #     td_resample = pd.Timedelta('0d')
     missingbefore = td_resample - (lastdate - firstdate)
-    missingafter = now - lastdate
 
+    missingafter = now - lastdate
+    if missingafter < pd.Timedelta('0d'):
+        missingafter = pd.Timedelta('0d')
 
     df = pd.DataFrame(
         {
@@ -461,14 +475,65 @@ good = 0
 missing = 0
 allcoins = {}
 
-summariescoins = []
-maxrewind = getMaxRewind()
-for coin in coins:
-    df = mylib.commons.loadCoinHistorical3(coin, maxrewind)
-    summariescoins.append(mySummaryCoin(df, '15d','7d'))
 
-df = pd.concat(summariescoins)
-print (df)
+def perfSummaries(coins):
+    summariescoins = []
+
+    for coin in coins:
+        df = allcoins[coin]
+
+        # 1H
+        df1 = mySummaryCoin(df, '12h', '1h')
+        df1 = df1.rename({
+            'firstprice': 'firstprice_1H',
+            'lastprice': 'lastprice_1H',
+            'gain': 'gain_1H',
+            'perf': 'perf_1H',
+            'firstdate': 'firstdate_1H',
+            'lastdate': 'lastdate_1H',
+            'missingafter': 'missingafter_1H',
+            'missingbefore': 'missingbefore_1H'},
+            axis='columns'
+        )
+
+        # 1D
+        df2 = mySummaryCoin(df, '1d', '1d')
+        df2 = df2.rename({
+            'firstprice': 'firstprice_1D',
+            'lastprice': 'lastprice_1D',
+            'gain': 'gain_1D',
+            'perf': 'perf_1D',
+            'firstdate': 'firstdate_1D',
+            'lastdate': 'lastdate_1D',
+            'missingafter': 'missingafter_1D',
+            'missingbefore': 'missingbefore_1D'},
+            axis='columns'
+        )
+        df = pd.merge(df1, df2, on='coin')
+        summariescoins.append(df)
+
+    df = pd.concat(summariescoins, axis=0)
+    df.set_index('coin', inplace=True)
+
+    df[['perf_1H', 'perf_1D']] = df[['perf_1H', 'perf_1D']].round(2)
+
+    s = df.style.apply(column_color)
+    mylib.file.saveto('/tmp/result.html', str(s.render()).encode())
+
+
+    # columns = []
+    # columns.append([k for k in df.columns if 'perf_' in k])
+    # df = df[columns]
+    print (df)
+
+
+# Load all historical coins
+maxrewind = getMaxRewind()
+allcoins = mylib.commons.loadAllCoinsHistorical3(coins,maxrewind)
+
+perfSummaries(coins)
+sys.exit()
+
 sys.exit()
 
 # Summary Coins
@@ -494,3 +559,6 @@ plotPoints(df)
 
 # Prices graph
 plotPrices(df)
+
+
+
