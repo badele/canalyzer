@@ -18,10 +18,10 @@ import matplotlib.pyplot as plt
 from pandas.tseries.frequencies import to_offset
 
 # Canalyzer
-import mylib
 import mylib.date
 import mylib.file
-from mylib import commons
+import mylib.text
+import mylib.commons
 
 # def analyseAllCoinsPerf(coins,nbdays=1):
 #     oneday = int(mylib.date.humanDurationToSecond("1d"))
@@ -109,7 +109,7 @@ from mylib import commons
 
 # def AnalyseCoin(coin):
 #     nbdays = '2d'
-#     df = commons.loadCoinHistorical(coin, nbdays)
+#     df = mylib.commons.loadCoinHistorical(coin, nbdays)
 #
 #     # filter two days and resample
 #     #filtered = df.ix['2018-01-14 00:00:00':'2018-01-15 23:59:59']
@@ -135,7 +135,7 @@ def AnalyseCoin(coin, start, end, resample):
     # dt_end = dt_end.replace(hour=23, minute=59, second=59)
     # dt_start = dt_end - datetime.timedelta(seconds=dayseconds-1)
 
-    df = commons.loadCoinsHistorical(coin, start, end)
+    df = mylib.commons.loadCoinsHistorical(coin, start, end)
 
     # textstart = "%02d-%02d-%02d 00:00:00" % (dt_start.year, dt_start.month, dt_start.day)
     # textend = "%02d-%02d-%02d 23:59:59" % (dt_end.year, dt_end.month, dt_end.day)
@@ -193,7 +193,7 @@ def AnalyseCoin(coin, start, end, resample):
 
 def perfByCoins(coinsID, start, end):
 
-    df = commons.loadCoinsHistorical(coinsID, start, end)
+    df = mylib.commons.loadCoinsHistorical(coinsID, start, end)
 
     g = df.groupby(['coin']).agg({'price_usd': ['min', 'max', 'first', 'last']})
     g['gain'] = g['price_usd']['last'] - g['price_usd']['first']
@@ -259,12 +259,12 @@ def plotPerfCoins():
     drange = mylib.date.getDateRangeFromEnd(nbdays, '1D')
     datascoins = dict()
     for coin in coins:
-        data = commons.loadCoinHistorical(coin, drange, freq=resample)
+        data = mylib.commons.loadCoinHistorical(coin, drange, freq=resample)
         if len(data) > 0:
             data = analyzeDataPerf(data, periods)
             datascoins[coin] = data
 
-    df = pd.DataFrame(commons.extractColumn(datascoins, 'perf_direction'))
+    df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf_direction'))
     df[:-1].plot(subplots=True, grid=True, legend=True, kind='area', stacked=False)
     plt.show()
 
@@ -285,13 +285,13 @@ def getPerfCoinsDirection():
     drange = mylib.date.getDateRangeFromEnd(nbdays, '1D')
     datascoins = dict()
     for coin in coins:
-        data = commons.loadCoinHistorical(coin, drange, freq=resample)
+        data = mylib.commons.loadCoinHistorical(coin, drange, freq=resample)
         if len(data) > 0:
             data = analyzeDataPerf(data, periods)
             datascoins[coin] = data
 
 
-    df = pd.DataFrame(commons.extractColumn(datascoins, 'perf'))
+    df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf'))
     return df
 
 def getcoinsPerf24h():
@@ -311,12 +311,12 @@ def getcoinsPerf24h():
     datascoins = dict()
     for coin in coins:
         print('coin %s' % coin)
-        data = commons.loadCoinHistorical2(coin, rewind=rewind, resample=resample)
+        data = mylib.commons.loadCoinHistorical2(coin, rewind=rewind, resample=resample)
         if len(data) > 0:
             #data = analyzeDataPerf(data, periods)
             datascoins[coin] = data
 
-    df = pd.DataFrame(commons.extractColumn(datascoins, 'perf'))
+    df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf'))
     return df
 
 def getcoinsPerf24h2():
@@ -336,12 +336,12 @@ def getcoinsPerf24h2():
     datascoins = dict()
     for coin in coins:
         print('coin %s' % coin)
-        data = commons.loadCoinHistorical2(coin, rewind=rewind, resample=resample)
+        data = mylib.commons.loadCoinHistorical2(coin, rewind=rewind, resample=resample)
         if len(data) > 0:
             #data = analyzeDataPerf(data, periods)
             datascoins[coin] = data
 
-    df = pd.DataFrame(commons.extractColumn(datascoins, 'perf'))
+    df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf'))
     return df
 
 def column_color(col):
@@ -379,13 +379,13 @@ def summaryCoins(coins):
     for period in mylib.conf.yanalyzer['analyze']['period']:
         periodcolumns[pd.Timedelta(period['resample'])] = period['name']
 
-    datas = commons.loadAllCoinsHistorical3(coins, maxrewind)
+    datas = mylib.commons.loadAllCoinsHistorical3(coins, maxrewind)
 
     # Resample all coins historical datas
     periods = {}
     for period in mylib.conf.yanalyzer['analyze']['period']:
         print ("analyze %s with %s resample period" % (period['name'], period['resample']))
-        periods[period['name']] = commons.resampleAllCoinsHistorical(datas, period['rewind'], period['resample'])
+        periods[period['name']] = mylib.commons.resampleAllCoinsHistorical(datas, period['rewind'], period['resample'])
 
     # Compute columns values
     minperiodidx = list(periodcolumns)[0]
@@ -445,6 +445,8 @@ def mySummaryCoin(df, rewind, resample):
     # if td_resample < pd.Timedelta('0d'):
     #     td_resample = pd.Timedelta('0d')
     missingbefore = td_resample - (lastdate - firstdate)
+    if missingbefore < pd.Timedelta('0d'):
+        missingbefore = pd.Timedelta('0d')
 
     missingafter = now - lastdate
     if missingafter < pd.Timedelta('0d'):
@@ -466,17 +468,89 @@ def mySummaryCoin(df, rewind, resample):
 
     return df
 
-commons.initCanalyzer()
-coins = commons.getCoins4Markets()
-coins = coins[:5]
+def globalPerfCoins(markets, coins):
+    summariescoins = []
+
+    simulatemoney = mylib.conf.yanalyzer['analyze']['simulate']['money']
+
+    for coin in coins:
+        df = allcoins[coin]
+
+        try:
+            # 1H
+            df1 = mySummaryCoin(df, '12h', '1h')
+            df1 = df1.rename({
+                'firstprice': 'firstprice_1H',
+                'lastprice': 'lastprice_1H',
+                'gain': 'gain_1H',
+                'perf': 'perf_1H',
+                'firstdate': 'firstdate_1H',
+                'lastdate': 'lastdate_1H',
+                'missingafter': 'missingafter_1H',
+                'missingbefore': 'missingbefore_1H'},
+                axis='columns'
+            )
+            df1['simulategain_1H'] = simulatemoney * (df1['perf_1H']/100)
+
+            # 1D
+            df2 = mySummaryCoin(df, '1d', '1d')
+            df2 = df2.rename({
+                'firstprice': 'firstprice_1D',
+                'lastprice': 'lastprice_1D',
+                'gain': 'gain_1D',
+                'perf': 'perf_1D',
+                'firstdate': 'firstdate_1D',
+                'lastdate': 'lastdate_1D',
+                'missingafter': 'missingafter_1D',
+                'missingbefore': 'missingbefore_1D'},
+                axis='columns'
+            )
+            df2['simulategain_1D'] = simulatemoney * (df2['perf_1D']/100)
+
+            df = pd.merge(df1, df2, on='coin')
+            summariescoins.append(df)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            pass
+
+    try:
+        df = pd.concat(summariescoins, axis=0)
+        df.set_index('coin', inplace=True)
+
+        count = len(df)
+        perf1h = df['simulategain_1H'].sum() / (count*simulatemoney) * 100
+        perf1d = df['simulategain_1D'].sum() / (count*simulatemoney) * 100
+        gain1h = df['simulategain_1H'].sum()
+        gain1d = df['simulategain_1D'].sum()
+        missingbefore = df['missingbefore_1D'].max()
+        missingafter = df['missingafter_1H'].min()
 
 
-good = 0
-missing = 0
-allcoins = {}
+        lines1 = []
+        lines1.append([["Number markets", len(markets)]])
+        lines1.append([["Number coins for all markets", len(coins)]])
 
+        lines2 = []
+        lines2.append([["Gain1h", gain1h],["Perf1h", "%.2f" % perf1h]])
+        lines2.append([["Gain1d", gain1d],["Perf1d", "%.2f" % perf1d]])
+        lines2.append([["Missingbefore", missingbefore],["Missingafter", missingafter]])
 
-def perfSummaries(coins):
+        # Show Result
+        text = mylib.text.getTitleText("Main coins informations")
+        text += mylib.text.getLineText()
+        text += mylib.text.convertArray2ColumnText(lines1)
+        text += mylib.text.getLineTitleText("Coins performance")
+        text += mylib.text.convertArray2ColumnText(lines2)
+        text += mylib.text.getLineText()
+        print(text)
+
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except:
+        pass
+
+def summaryPerfCoins(coins):
     summariescoins = []
 
     for coin in coins:
@@ -527,11 +601,21 @@ def perfSummaries(coins):
     print (df)
 
 
+mylib.commons.initCanalyzer()
+markets = mylib.commons.getMarkets()
+coins = mylib.commons.getCoins4Markets()
+#coins = coins[:50]
+
+good = 0
+missing = 0
+allcoins = {}
+
 # Load all historical coins
 maxrewind = getMaxRewind()
 allcoins = mylib.commons.loadAllCoinsHistorical3(coins,maxrewind)
 
-perfSummaries(coins)
+globalPerfCoins(markets, coins)
+#summaryPerfCoins(coins)
 sys.exit()
 
 sys.exit()
@@ -559,6 +643,3 @@ plotPoints(df)
 
 # Prices graph
 plotPrices(df)
-
-
-
