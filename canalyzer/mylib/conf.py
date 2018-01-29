@@ -2,6 +2,9 @@
 
 import os
 import yaml
+import collections
+
+import pandas as pd
 from pymarketcap import Pymarketcap
 
 
@@ -19,3 +22,13 @@ def initCoinMarketCap():
         coinmarketcap = Pymarketcap()
 
     return coinmarketcap
+
+def getSelectedMarkets():
+    return yanalyzer['select']['market']
+
+def getPeriods():
+    periods = collections.OrderedDict()
+    for period in yanalyzer['analyze']['period']:
+        periods[pd.Timedelta(period['resample'])] = period
+
+    return collections.OrderedDict(sorted(periods.items()))

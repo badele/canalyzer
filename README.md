@@ -16,15 +16,3 @@ cd ~/canalyzer/canalyzer
 git clone git@github.com:badele/canalyzer-cache.git
 ```
 
-## Update canalyzer-cache submodule
-```
-git submodule update                                                                                                                         2750ms  lun. 15 janv. 2018 18:50:47 CET
-```
-
-# test
-```
-cd canalyzer/canalyzer
-python test.py
-
-``` 
-

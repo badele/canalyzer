@@ -5,6 +5,7 @@ import re
 import sys
 import time
 import datetime
+import collections
 
 import mylib.conf
 import mylib.file
@@ -56,10 +57,8 @@ def getCacheDuration():
     return cacheduration
 
 
-def getMarkets():
-    return mylib.conf.yanalyzer['select']['market']
 
-def getCoins4Markets():
+def getCoins4Markets(markets):
     """
     Get available coins for the markets from canalyzer.yaml file
     """
@@ -70,7 +69,7 @@ def getCoins4Markets():
         return mylib.file.loadJSON(filename)
 
     coins = []
-    for market in getMarkets():
+    for market in markets:
         print ("Get coins for %s market" % market)
         coinmarketcap = mylib.conf.initCoinMarketCap()
         exchanges = coinmarketcap.exchange(market)

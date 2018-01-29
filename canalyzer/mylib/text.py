@@ -6,9 +6,14 @@ import simplejson as json
 import mylib.date
 from mylib import commons
 
-terminalheight, terminalwidth = os.popen('stty size', 'r').read().split()
-terminalheight = int(terminalheight)
-terminalwidth = int(terminalwidth)
+terminalheight = 25
+terminalwidth = 80
+try:
+    terminalheight, terminalwidth = os.popen('stty size', 'r').read().split()
+    terminalheight = int(terminalheight)
+    terminalwidth = int(terminalwidth)
+except:
+    pass
 
 
 def getTitleText(title):

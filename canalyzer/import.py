@@ -83,7 +83,8 @@ from mylib import commons
 
 commons.initCanalyzer()
 
-coinsID = commons.getCoins4Markets()
+markets = mylib.commons.getSelectedMarkets()
+coinsID = mylib.commons.getCoins4Markets(markets)
 
 nbdays = mylib.conf.yanalyzer['import']['nbdays']
 drange = mylib.date.getDateRangeFromEnd(nbdays,'1D')
