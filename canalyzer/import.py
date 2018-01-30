@@ -83,7 +83,7 @@ from mylib import commons
 
 commons.initCanalyzer()
 
-markets = mylib.commons.getSelectedMarkets()
+markets = mylib.conf.getSelectedMarkets()
 coinsID = mylib.commons.getCoins4Markets(markets)
 
 nbdays = mylib.conf.yanalyzer['import']['nbdays']

@@ -150,106 +150,106 @@ def importCoinsHistorical(coins,daterange):
             time.sleep(pausetime)
 
 
-def loadCoinHistorical(coin, drange,freq='1H'):
+# def loadCoinHistorical(coin, drange,freq='1H'):
+#
+#     datas = []
+#     for ddate in drange:
+#         # If same date, not send to cache
+#         tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
+#         coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
+#         if not os.path.exists(coinpath):
+#             continue
+#
+#         datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
+#         filename = "%s/daily_%s.json" % (coinpath, datetext)
+#
+#         if not os.path.exists(filename):
+#             continue
+#
+#         # Read historical coin
+#         df = pd.read_json(filename)
+#
+#         if len(df) == 0:
+#             continue
+#
+#         df.set_index('date', inplace=True)
+#         df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
+#
+#         # Resample and realign date
+#         df = df.asfreq(freq=freq, method='bfill')
+#         df.index = df.index.floor(freq)
+#         datas.append(df)
+#
+#
+#     if len(datas) == 0:
+#         return pd.DataFrame()
+#
+#     df = pd.concat(datas)
+#     df = df.sort_index()
+#
+#     return df
 
-    datas = []
-    for ddate in drange:
-        # If same date, not send to cache
-        tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
-        coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
-        if not os.path.exists(coinpath):
-            continue
-
-        datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
-        filename = "%s/daily_%s.json" % (coinpath, datetext)
-
-        if not os.path.exists(filename):
-            continue
-
-        # Read historical coin
-        df = pd.read_json(filename)
-
-        if len(df) == 0:
-            continue
-
-        df.set_index('date', inplace=True)
-        df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
-
-        # Resample and realign date
-        df = df.asfreq(freq=freq, method='bfill')
-        df.index = df.index.floor(freq)
-        datas.append(df)
-
-
-    if len(datas) == 0:
-        return pd.DataFrame()
-
-    df = pd.concat(datas)
-    df = df.sort_index()
-
-    return df
-
-def loadCoinHistorical2(coin, rewind, resample):
-
-    rewindfiledate = max(int(pd.Timedelta('1d')/ np.timedelta64(1, 's')), int(pd.Timedelta(rewind) / np.timedelta64(1, 's') * 2))
-    rangefiledate = mylib.date.getDateRangeFromEnd('%ss' % rewindfiledate, '1D')
-
-    datas = []
-    for ddate in rangefiledate:
-        # If same date, not send to cache
-        tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
-        coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
-        if not os.path.exists(coinpath):
-            continue
-
-        datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
-        filename = "%s/daily_%s.json" % (coinpath, datetext)
-
-        if not os.path.exists(filename):
-            continue
-
-        # Read historical coin
-        df = pd.read_json(filename)
-
-        if len(df) == 0:
-            continue
-
-        df.set_index('date', inplace=True)
-        #df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
-        #df.index.tz = None
-
-        #r.index = r.index.floor(freq)
-        datas.append(df)
-
-    if len(datas) == 0:
-        return pd.DataFrame()
-
-    df = pd.concat(datas)
-    df = df.sort_index()
-
-    # Resample and realign date
-    r = df.resample(resample)
-    r = r.agg({
-        'price_usd': ['first', 'last', 'min', 'max'],
-        'volume_usd': ['mean']
-    })
-
-    r['gain'] = r['price_usd']['last'] - r['price_usd']['first']
-    r['perf'] = ((r['price_usd']['last'] / r['price_usd']['first']) - 1) * 100
-
-    # r.columns = r.columns.droplevel()
-    r = r.rename({'price_usd': 'price', 'volume_usd': 'volume'}, axis='columns')
-    r.columns = ['first','last','low','high','vol24','gain', 'perf']
-
-    # dfilter = datetime.datetime.now()
-    # filter = pd.date_range(start=dfilter,periods=3, freq='-%s' % resample)[2]
-    # print(pd.date_range(start=dfilter,periods=3, freq='-%s' % resample))
-    # print(r[r.index >= filter])
-
-    return r
+# def loadCoinHistorical2(coin, rewind, resample):
+#
+#     rewindfiledate = max(int(pd.Timedelta('1d')/ np.timedelta64(1, 's')), int(pd.Timedelta(rewind) / np.timedelta64(1, 's') * 2))
+#     rangefiledate = mylib.date.getDateRangeFromEnd('%ss' % rewindfiledate, '1D')
+#
+#     datas = []
+#     for ddate in rangefiledate:
+#         # If same date, not send to cache
+#         tocache = datetime.datetime.fromtimestamp(mylib.date.getNow()).date()!=ddate.date()
+#         coinpath = "%s/%s" % (getStoragePath(coinspath, tocache), coin.upper())
+#         if not os.path.exists(coinpath):
+#             continue
+#
+#         datetext = "%02d-%02d-%02d" % (ddate.year, ddate.month, ddate.day)
+#         filename = "%s/daily_%s.json" % (coinpath, datetext)
+#
+#         if not os.path.exists(filename):
+#             continue
+#
+#         # Read historical coin
+#         df = pd.read_json(filename)
+#
+#         if len(df) == 0:
+#             continue
+#
+#         df.set_index('date', inplace=True)
+#         #df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
+#         #df.index.tz = None
+#
+#         #r.index = r.index.floor(freq)
+#         datas.append(df)
+#
+#     if len(datas) == 0:
+#         return pd.DataFrame()
+#
+#     df = pd.concat(datas)
+#     df = df.sort_index()
+#
+#     # Resample and realign date
+#     r = df.resample(resample)
+#     r = r.agg({
+#         'price_usd': ['first', 'last', 'min', 'max'],
+#         'volume_usd': ['mean']
+#     })
+#
+#     r['gain'] = r['price_usd']['last'] - r['price_usd']['first']
+#     r['perf'] = ((r['price_usd']['last'] / r['price_usd']['first']) - 1) * 100
+#
+#     # r.columns = r.columns.droplevel()
+#     r = r.rename({'price_usd': 'price', 'volume_usd': 'volume'}, axis='columns')
+#     r.columns = ['first','last','low','high','vol24','gain', 'perf']
+#
+#     # dfilter = datetime.datetime.now()
+#     # filter = pd.date_range(start=dfilter,periods=3, freq='-%s' % resample)[2]
+#     # print(pd.date_range(start=dfilter,periods=3, freq='-%s' % resample))
+#     # print(r[r.index >= filter])
+#
+#     return r
 
 
-def loadCoinHistorical3(coin, rewind):
+def loadCoinHistorical(coin, rewind):
 
     print ("Load historical data for %s coin" % coin)
 
@@ -272,17 +272,22 @@ def loadCoinHistorical3(coin, rewind):
             continue
 
         # Read historical coin
-        df = pd.read_json(filename)
+        try:
+            df = pd.read_json(filename)
 
-        if len(df) == 0:
-            continue
+            if len(df) == 0:
+                continue
 
-        df.set_index('date', inplace=True)
-        #df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
-        #df.index.tz = None
+            df.set_index('date', inplace=True)
+            #df.index = df.index.tz_localize('UTC').tz_convert(mylib.conf.yanalyzer['conf']['timezone'])
+            #df.index.tz = None
 
-        #r.index = r.index.floor(freq)
-        datas.append(df)
+            #r.index = r.index.floor(freq)
+            datas.append(df)
+
+        except ValueError:
+            print("The %s is ignored, file bad format" % filename)
+            pass
 
     if len(datas) == 0:
         return pd.DataFrame()
@@ -293,11 +298,11 @@ def loadCoinHistorical3(coin, rewind):
 
     return df
 
-def loadAllCoinsHistorical3(coins, rewind):
+def loadAllCoinsHistorical(coins, rewind):
 
     datas = {}
     for coin in coins:
-        datas[coin] = loadCoinHistorical3(coin,rewind)
+        datas[coin] = loadCoinHistorical(coin,rewind)
 
     return datas
 

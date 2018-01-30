@@ -128,108 +128,33 @@ import mylib.commons
 #
 #     return grp
 
-def AnalyseCoin(coin, start, end, resample):
-    # Compute text date
-    # dayseconds = int(mylib.date.humanDurationToSecond(nbdays))
-    # dt_end = datetime.datetime.now()
-    # dt_end = dt_end.replace(hour=23, minute=59, second=59)
-    # dt_start = dt_end - datetime.timedelta(seconds=dayseconds-1)
 
-    df = mylib.commons.loadCoinsHistorical(coin, start, end)
-
-    # textstart = "%02d-%02d-%02d 00:00:00" % (dt_start.year, dt_start.month, dt_start.day)
-    # textend = "%02d-%02d-%02d 23:59:59" % (dt_end.year, dt_end.month, dt_end.day)
-
-    idxdate = df.tail(1).index[0]
-    (start, end ) = (mylib.date.getDateRangeFromEnd('1D', idxdate))
-
-    # filter and resample
-    filtered = df.ix[start:end]
-
-    # # Compute perf
-    # previous = filtered.shift(1)['price_usd']
-    # filtered['gain'] = filtered['price_usd'] - previous
-    # filtered['perf'] = ((filtered['price_usd'] / previous) - 1) * 100
-
-
-    r = filtered.resample(resample)
-    r = r.agg({'price_usd': ['min', 'max', 'first', 'last']})
-    t = filtered.asfreq(resample,method='pad')
-
-    previous = r['price_usd']['first'][0]
-    last= r['price_usd']['last'][1]
-    r['gain'] = last - previous
-    r['perf'] = ((last / previous) - 1) * 100
-
-
-    print (filtered)
-    print (r)
-    print (t)
-
-
-    sys.exit()
-
-    print(t)
-
-    print(start)
-    print(end)
-
-    sys.exit()
-
-    r = filtered.resample(resample)
-    r = r.agg({'price_usd': ['min', 'max', 'first', 'last']})
-    r = r.rename({'price_usd': 'price', 'first': 'open', 'last': 'close', 'min': 'low', 'max': 'high'},
-                     axis='columns')
-
-    print(r)
-
-    # Compute coin performance
-    previous = r.shift(1)['price']['close']
-    r['gain'] = r['price']['close'] - previous
-    r['perf'] = ((r['price']['close'] / previous) - 1) * 100
-
-    return r
-
-
-def perfByCoins(coinsID, start, end):
-
-    df = mylib.commons.loadCoinsHistorical(coinsID, start, end)
-
-    g = df.groupby(['coin']).agg({'price_usd': ['min', 'max', 'first', 'last']})
-    g['gain'] = g['price_usd']['last'] - g['price_usd']['first']
-    g['perf'] = ((g['price_usd']['last'] / g['price_usd']['first']) - 1) * 100
-
-    return g
-
-def perfForAllCoins(coinsID, start, end):
-
-    df = perfByCoins(coinsID, start, end)
-
-    first = df['price_usd']['first'].sum()
-    last = df['price_usd']['last'].sum()
-
-
-    gain = last - first
-    perf = ((last / first) -1) * 100
-
-    return ({'gain':gain, 'perf':perf})
-
-def plotPoints(df):
-    g = df.groupby([pd.Grouper(freq=resample), 'coin'])
-    g = g.agg({'price_usd': ['first', 'last']})
-    g['gain'] = g['price_usd']['last'] - g['price_usd']['first']
-    g['direction'] = np.sign(g['gain'])
-
-    gdir = g['direction'].groupby([pd.Grouper(freq=resample, level='date')]).sum()
-    gdir[:-1].plot(legend=True)
-    plt.legend(['All coins direction'])
-    plt.show()
-
-def plotPrices(df):
-    g = df.groupby([pd.Grouper(freq=resample)]).agg({'price_usd': ['sum']})
-    g['price_usd']['sum'][:-1].plot(legend=True)
-    plt.legend(['All coins in $'])
-    plt.show()
+# def perfByCoins(coinsID, start, end):
+#
+#     df = mylib.commons.loadCoinsHistorical(coinsID, start, end)
+#
+#     g = df.groupby(['coin']).agg({'price_usd': ['min', 'max', 'first', 'last']})
+#     g['gain'] = g['price_usd']['last'] - g['price_usd']['first']
+#     g['perf'] = ((g['price_usd']['last'] / g['price_usd']['first']) - 1) * 100
+#
+#     return g
+#
+# def plotPoints(df):
+#     g = df.groupby([pd.Grouper(freq=resample), 'coin'])
+#     g = g.agg({'price_usd': ['first', 'last']})
+#     g['gain'] = g['price_usd']['last'] - g['price_usd']['first']
+#     g['direction'] = np.sign(g['gain'])
+#
+#     gdir = g['direction'].groupby([pd.Grouper(freq=resample, level='date')]).sum()
+#     gdir[:-1].plot(legend=True)
+#     plt.legend(['All coins direction'])
+#     plt.show()
+#
+# def plotPrices(df):
+#     g = df.groupby([pd.Grouper(freq=resample)]).agg({'price_usd': ['sum']})
+#     g['price_usd']['sum'][:-1].plot(legend=True)
+#     plt.legend(['All coins in $'])
+#     plt.show()
 
 # def analyzeDataPerf(data, compare):
 #     data['previous'] = data['price_usd'].shift(compare)
@@ -242,125 +167,75 @@ def plotPrices(df):
 #
 #     return data
 
-def plotPerfCoins():
-    # Parameters
-    nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
-    resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
-    compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
+# def plotPerfCoins():
+#     # Parameters
+#     nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
+#     resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
+#     compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
+#
+#     # Compute periods comparation offset
+#     now = mylib.date.getNow()
+#     coffset = pd.Timedelta('1D') / np.timedelta64(1, 's')
+#     dt_now = datetime.datetime.fromtimestamp(int(now))
+#     dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
+#     periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
+#
+#     # Plot perf
+#     drange = mylib.date.getDateRangeFromEnd(nbdays, '1D')
+#     datascoins = dict()
+#     for coin in coins:
+#         data = mylib.commons.loadCoinHistorical(coin, drange, freq=resample)
+#         if len(data) > 0:
+#             data = analyzeDataPerf(data, periods)
+#             datascoins[coin] = data
+#
+#     df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf_direction'))
+#     df[:-1].plot(subplots=True, grid=True, legend=True, kind='area', stacked=False)
+#     plt.show()
 
-    # Compute periods comparation offset
-    now = mylib.date.getNow()
-    coffset = pd.Timedelta('1D') / np.timedelta64(1, 's')
-    dt_now = datetime.datetime.fromtimestamp(int(now))
-    dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
-    periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
+# def getPerfCoinsDirection():
+#     # Parameters
+#     nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
+#     resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
+#     compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
+#
+#     # Compute periods comparation offset
+#     now = mylib.date.getNow()
+#     coffset = pd.Timedelta('1D') / np.timedelta64(1, 's')
+#     dt_now = datetime.datetime.fromtimestamp(int(now))
+#     dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
+#     periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
+#
+#     # Plot perf
+#     drange = mylib.date.getDateRangeFromEnd(nbdays, '1D')
+#     datascoins = dict()
+#     for coin in coins:
+#         data = mylib.commons.loadCoinHistorical(coin, drange, freq=resample)
+#         if len(data) > 0:
+#             data = analyzeDataPerf(data, periods)
+#             datascoins[coin] = data
+#
+#
+#     df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf'))
+#     return df
 
-    # Plot perf
-    drange = mylib.date.getDateRangeFromEnd(nbdays, '1D')
-    datascoins = dict()
-    for coin in coins:
-        data = mylib.commons.loadCoinHistorical(coin, drange, freq=resample)
-        if len(data) > 0:
-            data = analyzeDataPerf(data, periods)
-            datascoins[coin] = data
+# def column_color(col):
+#     if 'perf_' in col.name:
+#         is_neg = col < 0
+#         return ['background-color: red' if v else 'background-color: green' for v in is_neg]
+#
+#     if 'gain_' in col.name:
+#         is_neg = col < 0
+#         return ['color: red' if v else 'color: green' for v in is_neg]
+#
+#     return [''] * len(col)
 
-    df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf_direction'))
-    df[:-1].plot(subplots=True, grid=True, legend=True, kind='area', stacked=False)
-    plt.show()
-
-def getPerfCoinsDirection():
-    # Parameters
-    nbdays = mylib.conf.yanalyzer['analyze']['period'][0]['period']
-    resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
-    compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
-
-    # Compute periods comparation offset
-    now = mylib.date.getNow()
-    coffset = pd.Timedelta('1D') / np.timedelta64(1, 's')
-    dt_now = datetime.datetime.fromtimestamp(int(now))
-    dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
-    periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
-
-    # Plot perf
-    drange = mylib.date.getDateRangeFromEnd(nbdays, '1D')
-    datascoins = dict()
-    for coin in coins:
-        data = mylib.commons.loadCoinHistorical(coin, drange, freq=resample)
-        if len(data) > 0:
-            data = analyzeDataPerf(data, periods)
-            datascoins[coin] = data
-
-
-    df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf'))
-    return df
-
-def getcoinsPerf24h():
-    # Parameters
-    rewind = mylib.conf.yanalyzer['analyze']['period'][0]['rewind']
-    resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
-    #compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
-
-
-    # Compute periods comparation offset
-    now = mylib.date.getNow()
-    coffset = pd.Timedelta(resample) / np.timedelta64(1, 's')
-    dt_now = datetime.datetime.fromtimestamp(int(now))
-    dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
-    periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
-
-    datascoins = dict()
-    for coin in coins:
-        print('coin %s' % coin)
-        data = mylib.commons.loadCoinHistorical2(coin, rewind=rewind, resample=resample)
-        if len(data) > 0:
-            #data = analyzeDataPerf(data, periods)
-            datascoins[coin] = data
-
-    df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf'))
-    return df
-
-def getcoinsPerf24h2():
-    # Parameters
-    rewind = mylib.conf.yanalyzer['analyze']['global']['rewind']
-    resample = mylib.conf.yanalyzer['analyze']['period'][0]['resample']
-    #compare = mylib.conf.yanalyzer['analyze']['period'][0]['compare']
-
-
-    # Compute periods comparation offset
-    now = mylib.date.getNow()
-    coffset = pd.Timedelta(resample) / np.timedelta64(1, 's')
-    dt_now = datetime.datetime.fromtimestamp(int(now))
-    dt_end = datetime.datetime.fromtimestamp(int(now + coffset))
-    periods = len(pd.date_range(start=dt_now, end=dt_end, freq=resample, closed='left'))
-
-    datascoins = dict()
-    for coin in coins:
-        print('coin %s' % coin)
-        data = mylib.commons.loadCoinHistorical2(coin, rewind=rewind, resample=resample)
-        if len(data) > 0:
-            #data = analyzeDataPerf(data, periods)
-            datascoins[coin] = data
-
-    df = pd.DataFrame(mylib.commons.extractColumn(datascoins, 'perf'))
-    return df
-
-def column_color(col):
-    if 'perf_' in col.name:
-        is_neg = col < 0
-        return ['background-color: red' if v else 'background-color: green' for v in is_neg]
-
-    if 'gain_' in col.name:
-        is_neg = col < 0
-        return ['color: red' if v else 'color: green' for v in is_neg]
-
-    return [''] * len(col)
-
-def negative_background(val):
-    bg = ''
-    if type(val) == float and val < 0:
-        bg = 'background-color: red'
-
-    return bg
+# def negative_background(val):
+#     bg = ''
+#     if type(val) == float and val < 0:
+#         bg = 'background-color: red'
+#
+#     return bg
 
 
 def getMaxRewind():
@@ -372,67 +247,67 @@ def getMaxRewind():
 
     return maxrewind
 
-def summaryCoins(coins):
+# def summaryCoins(coins):
+#
+#     # Sort period column
+#     periodcolumns = collections.OrderedDict()
+#     for period in mylib.conf.yanalyzer['analyze']['period']:
+#         periodcolumns[pd.Timedelta(period['resample'])] = period['name']
+#
+#     datas = mylib.commons.loadAllCoinsHistorical3(coins, maxrewind)
+#
+#     # Resample all coins historical datas
+#     periods = {}
+#     for period in mylib.conf.yanalyzer['analyze']['period']:
+#         print ("analyze %s with %s resample period" % (period['name'], period['resample']))
+#         periods[period['name']] = mylib.commons.resampleAllCoinsHistorical(datas, period['rewind'], period['resample'])
+#
+#     # Compute columns values
+#     minperiodidx = list(periodcolumns)[0]
+#     minperiodname = periodcolumns[pd.Timedelta(minperiodidx)]
+#     column = {'firstdate':{}, 'lastdate': {}, 'nbdays': {}}
+#     for period in periods:
+#         columnperf = "perf_%s" % period
+#         column[columnperf] = {}
+#         if minperiodname == period:
+#             columnprice = "lastprice_%s" % minperiodname
+#             column[columnprice] = {}
+#
+#         for coin in periods[period]:
+#             if len(periods[period][coin]) <= 0:
+#                 continue
+#
+#             if minperiodname == period:
+#                 column[columnprice][coin] = periods[period][coin]['last'][-1]
+#
+#             # Compute coins performance
+#             column[columnperf][coin] = {}
+#
+#             # Search the first date for coin
+#             if coin not in column['firstdate']:
+#                 column['firstdate'][coin] = periods[period][coin].index[0]
+#             column['firstdate'][coin] = min(periods[period][coin].index[0],column['firstdate'][coin])
+#
+#             # Search the last date for coin
+#             if coin not in column['lastdate']:
+#                 column['lastdate'][coin] = periods[period][coin].index[-1]
+#             column['lastdate'][coin] = max(periods[period][coin].index[-1],column['lastdate'][coin])
+#
+#             column['nbdays'][coin] = column['lastdate'][coin] - column['firstdate'][coin]
+#             column[columnperf][coin] = periods[period][coin]['perf'][-1]
+#
+#     columnname = []
+#     columnname.append("lastprice_%s" % minperiodname)
+#     for period in periodcolumns:
+#         columnname.append('perf_%s' % periodcolumns[period])
+#     # columnname.append('firstdate')
+#     # columnname.append('lastdate')
+#     columnname.append('nbdays')
+#
+#     df = pd.DataFrame(column,columns=columnname)
+#     return df
 
-    # Sort period column
-    periodcolumns = collections.OrderedDict()
-    for period in mylib.conf.yanalyzer['analyze']['period']:
-        periodcolumns[pd.Timedelta(period['resample'])] = period['name']
-
-    datas = mylib.commons.loadAllCoinsHistorical3(coins, maxrewind)
-
-    # Resample all coins historical datas
-    periods = {}
-    for period in mylib.conf.yanalyzer['analyze']['period']:
-        print ("analyze %s with %s resample period" % (period['name'], period['resample']))
-        periods[period['name']] = mylib.commons.resampleAllCoinsHistorical(datas, period['rewind'], period['resample'])
-
-    # Compute columns values
-    minperiodidx = list(periodcolumns)[0]
-    minperiodname = periodcolumns[pd.Timedelta(minperiodidx)]
-    column = {'firstdate':{}, 'lastdate': {}, 'nbdays': {}}
-    for period in periods:
-        columnperf = "perf_%s" % period
-        column[columnperf] = {}
-        if minperiodname == period:
-            columnprice = "lastprice_%s" % minperiodname
-            column[columnprice] = {}
-
-        for coin in periods[period]:
-            if len(periods[period][coin]) <= 0:
-                continue
-
-            if minperiodname == period:
-                column[columnprice][coin] = periods[period][coin]['last'][-1]
-
-            # Compute coins performance
-            column[columnperf][coin] = {}
-
-            # Search the first date for coin
-            if coin not in column['firstdate']:
-                column['firstdate'][coin] = periods[period][coin].index[0]
-            column['firstdate'][coin] = min(periods[period][coin].index[0],column['firstdate'][coin])
-
-            # Search the last date for coin
-            if coin not in column['lastdate']:
-                column['lastdate'][coin] = periods[period][coin].index[-1]
-            column['lastdate'][coin] = max(periods[period][coin].index[-1],column['lastdate'][coin])
-
-            column['nbdays'][coin] = column['lastdate'][coin] - column['firstdate'][coin]
-            column[columnperf][coin] = periods[period][coin]['perf'][-1]
-
-    columnname = []
-    columnname.append("lastprice_%s" % minperiodname)
-    for period in periodcolumns:
-        columnname.append('perf_%s' % periodcolumns[period])
-    # columnname.append('firstdate')
-    # columnname.append('lastdate')
-    columnname.append('nbdays')
-
-    df = pd.DataFrame(column,columns=columnname)
-    return df
-
-def mySummaryCoin(df, rewind, resample):
+def summaryCoin(df, rewind, resample):
     filtered = mylib.commons.filterHistorical(df, rewind)
     resampled = mylib.commons.resampleHistorical(filtered, resample)
     last = resampled.tail(1)
@@ -475,15 +350,27 @@ def globalPerfCoins(markets, allcoins):
     periods = mylib.conf.getPeriods()
 
     summariescoins = []
+    mindate = None
+    maxdate = None
     for coin in allcoins:
         df = allcoins[coin]
+
+        firstdate = df.index[0]
+        lastdate = df.index[-1]
+        if not mindate:
+                mindate = firstdate
+        if not maxdate:
+                maxdate = lastdate
+
+        mindate = min(firstdate,mindate)
+        maxdate = max(lastdate,maxdate)
 
         dfallperiod = pd.DataFrame()
         for key, period in periods.items():
             pname = period['name']
 
             try:
-                dfperiod = mySummaryCoin(df, period['rewind'], period['resample'])
+                dfperiod = summaryCoin(df, period['rewind'], period['resample'])
                 dfperiod = dfperiod.rename({
                     'firstprice': 'firstprice_%s' % pname,
                     'lastprice': 'lastprice_%s' % pname,
@@ -504,20 +391,28 @@ def globalPerfCoins(markets, allcoins):
 
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except:
-                pass
+            # except:
+            #     pass
 
         summariescoins.append(dfallperiod)
 
     try:
         df = pd.concat(summariescoins, axis=0)
-        df.set_index('coin', inplace=True)
 
         count = len(df)
+        if count==0:
+            text = mylib.text.getTitleText("No more data for analyzing")
+            text += mylib.text.getLineText()
+            return text
+
+        df.set_index('coin', inplace=True)
+
 
         lines1 = []
         lines1.append([["Number markets", len(markets)]])
         lines1.append([["Number coins for all markets", len(coins)]])
+        lines1.append([["Simulate performance Total/earch coin", "%s$/%s$" % (simulatemoney,simulatemoney*len(coins))]])
+        lines1.append([["Min date", mindate],["Max date", maxdate]])
 
         lines2 = []
         for key, period in periods.items():
@@ -531,82 +426,31 @@ def globalPerfCoins(markets, allcoins):
         #missingbefore = df['missingbefore_1D'].max()
         #missingafter = df['missingafter_1H'].min()
 
-
-
-
         #lines2.append([["Missingbefore", missingbefore],["Missingafter", missingafter]])
 
         # Show Result
         text = mylib.text.getTitleText("Main coins informations")
         text += mylib.text.getLineText()
         text += mylib.text.convertArray2ColumnText(lines1)
-        text += mylib.text.getLineTitleText("Coins performance")
+        text += mylib.text.getLineTitleText("Simulation coins performance")
         text += mylib.text.convertArray2ColumnText(lines2)
         text += mylib.text.getLineText()
-        print(text)
 
     except (KeyboardInterrupt, SystemExit):
         raise
 #    except:
 #        pass
+#    s = df.style.apply(column_color)
+#    mylib.file.saveto('/tmp/result.html', str(s.render()).encode())
 
     return text
 
-def summaryPerfCoins(coins):
-    summariescoins = []
 
-    for coin in coins:
-        df = allcoins[coin]
-
-        # 1H
-        df1 = mySummaryCoin(df, '12h', '1h')
-        df1 = df1.rename({
-            'firstprice': 'firstprice_1H',
-            'lastprice': 'lastprice_1H',
-            'gain': 'gain_1H',
-            'perf': 'perf_1H',
-            'firstdate': 'firstdate_1H',
-            'lastdate': 'lastdate_1H',
-            'missingafter': 'missingafter_1H',
-            'missingbefore': 'missingbefore_1H'},
-            axis='columns'
-        )
-
-        # 1D
-        df2 = mySummaryCoin(df, '1d', '1d')
-        df2 = df2.rename({
-            'firstprice': 'firstprice_1D',
-            'lastprice': 'lastprice_1D',
-            'gain': 'gain_1D',
-            'perf': 'perf_1D',
-            'firstdate': 'firstdate_1D',
-            'lastdate': 'lastdate_1D',
-            'missingafter': 'missingafter_1D',
-            'missingbefore': 'missingbefore_1D'},
-            axis='columns'
-        )
-        df = pd.merge(df1, df2, on='coin')
-        summariescoins.append(df)
-
-    df = pd.concat(summariescoins, axis=0)
-    df.set_index('coin', inplace=True)
-
-    df[['perf_1H', 'perf_1D']] = df[['perf_1H', 'perf_1D']].round(2)
-
-    s = df.style.apply(column_color)
-    mylib.file.saveto('/tmp/result.html', str(s.render()).encode())
-
-
-    # columns = []
-    # columns.append([k for k in df.columns if 'perf_' in k])
-    # df = df[columns]
-    print (df)
-
-
+datas = {}
 mylib.commons.initCanalyzer()
 markets = mylib.conf.getSelectedMarkets()
 coins = mylib.commons.getCoins4Markets(markets)
-coins = coins[:30]
+#coins = coins[:10]
 
 good = 0
 missing = 0
@@ -614,34 +458,33 @@ allcoins = {}
 
 # Load all historical coins
 maxrewind = getMaxRewind()
-allcoins = mylib.commons.loadAllCoinsHistorical3(coins,maxrewind)
+allcoins = mylib.commons.loadAllCoinsHistorical(coins,maxrewind)
 
-globalPerfCoins(markets, allcoins)
+text = globalPerfCoins(markets, allcoins)
+print(text)
 #summaryPerfCoins(coins)
 sys.exit()
 
-sys.exit()
+# # Summary Coins
+# df = summaryCoins(coins)
+# print (df.to_dict())
+# s = df.style.applymap(color_negative_red)
+# mylib.file.saveto('/tmp/result.html',str(s.render()).encode())
+# sys.exit()
+#
+# df = getcoinsPerf24h2()
+# print ("Last datas: %s" % df.index[-1])
+# df.tail(1)
+# print (df)
+# sys.exit()
 
-# Summary Coins
-df = summaryCoins(coins)
-print (df.to_dict())
-s = df.style.applymap(color_negative_red)
-mylib.file.saveto('/tmp/result.html',str(s.render()).encode())
-sys.exit()
-
-df = getcoinsPerf24h2()
-print ("Last datas: %s" % df.index[-1])
-df.tail(1)
-print (df)
-sys.exit()
-
-df[:-1].plot(subplots=True, grid=True, legend=True, kind='area', stacked=False)
-plt.title('all coins perf for %s coins' % len(coins))
-#plt.legend(['perf in %'])
-plt.show()
-
-# Points graphs
-plotPoints(df)
-
-# Prices graph
-plotPrices(df)
+# df[:-1].plot(subplots=True, grid=True, legend=True, kind='area', stacked=False)
+# plt.title('all coins perf for %s coins' % len(coins))
+# #plt.legend(['perf in %'])
+# plt.show()
+#
+# # Points graphs
+# plotPoints(df)
+#
+# # Prices graph
+# plotPrices(df)
