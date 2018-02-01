@@ -340,6 +340,42 @@ def resampleHistorical(df, resample):
 
     return r
 
+def SumarizeHistorical(df, rewind, resample):
+    filtered = mylib.commons.filterHistorical(df, rewind)
+    resampled = mylib.commons.resampleHistorical(filtered, resample)
+    last = resampled.tail(1)
+
+    # Compute missing datas
+    now = datetime.datetime.now()
+    lastdate = filtered.index[-1]
+    firstdate = filtered.index[0]
+    td_resample = pd.Timedelta(resample)
+    # if td_resample < pd.Timedelta('0d'):
+    #     td_resample = pd.Timedelta('0d')
+    missingbefore = td_resample - (lastdate - firstdate)
+    if missingbefore < pd.Timedelta('0d'):
+        missingbefore = pd.Timedelta('0d')
+
+    missingafter = now - lastdate
+    if missingafter < pd.Timedelta('0d'):
+        missingafter = pd.Timedelta('0d')
+
+    df = pd.DataFrame(
+        {
+            'coin': last['coin'],
+            'firstprice': last['last'],
+            'lastprice': last['last'],
+            'gain': last['last'] - last['first'],
+            'perf': ((last['last'] / last['first']) - 1) * 100,
+            'firstdate': firstdate,
+            'lastdate': lastdate,
+            'missingbefore': missingbefore,
+            'missingafter': missingafter
+        }
+    )
+
+    return df
+
 
 def resampleAllCoinsHistorical(datas,rewind, resample):
 

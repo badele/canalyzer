@@ -26,9 +26,9 @@ def initCoinMarketCap():
 def getSelectedMarkets():
     return yanalyzer['select']['market']
 
-def getPeriods():
+def getPeriods(section):
     periods = collections.OrderedDict()
-    for period in yanalyzer['analyze']['period']:
+    for period in yanalyzer[section]['period']:
         periods[pd.Timedelta(period['resample'])] = period
 
     return collections.OrderedDict(sorted(periods.items()))

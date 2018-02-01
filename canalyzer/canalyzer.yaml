@@ -8,7 +8,7 @@ select:
     - ETH
 
 import:
-  nbdays: 90D
+  nbdays: 365D
   ignore:
    - DOV
    - EBTCNEW
@@ -45,22 +45,34 @@ analyze:
       name: "1W"
       rewind: 10d
       resample: 7d
-    - monthly:
-      name: "1M"
+
+
+plot:
+  simulate:
+    money: 50
+
+  period:
+    - hourly:
+      name: "1H"
       rewind: 40d
-      resample: 30d
-    - quarterly:
-      name: "3M"
-      rewind: 90d
-      resample: 90d
-    - half:
-      name: "6M"
-      rewind: 180d
-      resample: 180d
-    - yearly:
-      name: "1Y"
-      rewind: 365d
-      resample: 365d
+      resample: 1h
+
+#    - monthly:
+#      name: "1M"
+#      rewind: 40d
+#      resample: 30d
+#    - quarterly:
+#      name: "3M"
+#      rewind: 90d
+#      resample: 90d
+#    - half:
+#      name: "6M"
+#      rewind: 180d
+#      resample: 180d
+#    - yearly:
+#      name: "1Y"
+#      rewind: 365d
+#      resample: 365d
 
 #      firstdate_1H  firstprice_1H  gain_1H         lastdate_1H  lastprice_1H missingafter_1H   missingbefore_1H  perf_1H        firstdate_1D  firstprice_1D  gain_1D         lastdate_1D
 #      lastprice_1D missingafter_1D missingbefore_1D  perf_1D
