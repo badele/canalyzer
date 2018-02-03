@@ -395,8 +395,6 @@ def globalPerfCoins(markets, allcoins):
 
 def plotPerfCoins( allcoins):
     # Simulation money value
-    simulatemoney = mylib.conf.yanalyzer['analyze']['simulate']['money']
-
     periods = mylib.conf.getPeriods('plot')
 
     summariescoins = []
@@ -414,13 +412,6 @@ def plotPerfCoins( allcoins):
                     try:
                         filtered = mylib.commons.filterHistorical(df, period['rewind'])
                         resampled = mylib.commons.resampleHistorical(filtered, period['resample'])
-
-                        first = resampled.head(1)
-
-                        resampled['globalgain'] = resampled['last'] - float(first['first'])
-                        resampled['globalperf'] = (resampled['last'] / float(first['first'])-1)*100
-                        resampled['simulategain'] = (simulatemoney * (1+resampled['globalperf'] / 100)) - simulatemoney
-
                         summariescoins.append(resampled)
 
                     except (KeyboardInterrupt, SystemExit):
@@ -439,6 +430,7 @@ def plotPerfCoins( allcoins):
         grp = grp.agg({'simulategain': ['sum']})
 
         grp['zeroline'] = 0
+        simulatemoney = mylib.conf.yanalyzer['analyze']['simulate']['money']
         grp['simulategain']['sum'].plot(title="All coins performance with %s$ on %s coins" % (simulatemoney*len(coins),len(coins)),label='simulategain',legend=True)
         grp['zeroline'].plot(color='black',grid=True,style='--')
         plt.margins(x=0)
@@ -498,7 +490,7 @@ datas = {}
 mylib.commons.initCanalyzer()
 markets = mylib.conf.getSelectedMarkets()
 coins = mylib.commons.getCoins4Markets(markets)
-coins = coins[:25]
+coins = coins[:10]
 
 good = 0
 missing = 0

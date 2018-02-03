@@ -37,6 +37,7 @@ def initCanalyzer():
     if not os.path.exists(path):
         os.makedirs(path)
 
+    pd.set_option('display.max_rows',None)
     pd.set_option('display.width',200)
     pd.set_option('display.float_format', lambda x: '%.5f' % x)
 
@@ -337,6 +338,12 @@ def resampleHistorical(df, resample):
     # r.columns = r.columns.droplevel()
     r = r.rename({'price_usd': 'price', 'volume_usd': 'volume'}, axis='columns')
     r.columns = ['coin', 'first','last','low','high','vol24','gain', 'perf']
+
+    firstprice = float(r.head(1)['first'])
+    simulatemoney = mylib.conf.yanalyzer['analyze']['simulate']['money']
+    r['globalgain'] = r['last'] - firstprice
+    r['globalperf'] = (r['last'] / firstprice-1)*100
+    r = r.ffill().bfill()
 
     return r
 

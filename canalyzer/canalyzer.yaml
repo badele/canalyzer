@@ -48,14 +48,23 @@ analyze:
 
 
 plot:
-  simulate:
-    money: 50
-
   period:
     - hourly:
-      name: "1H"
-      rewind: 40d
+      name: "1D"
+      rewind: 30d
       resample: 1h
+      function:
+        sma:
+          - 76
+          - 152
+    - weekly:
+      name: "7D"
+      rewind: 90d
+      resample: 1d
+      function:
+        sma:
+          - 12
+          - 30
 
 #    - monthly:
 #      name: "1M"
