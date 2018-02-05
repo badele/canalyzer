@@ -343,8 +343,8 @@ def resampleHistorical(df, resample):
     simulatemoney = mylib.conf.yanalyzer['analyze']['simulate']['money']
     r['globalgain'] = r['last'] - firstprice
     r['globalperf'] = (r['last'] / firstprice-1)*100
-    r = r.ffill().bfill()
 
+    r = r.ffill().bfill()
     return r
 
 def SumarizeHistorical(df, rewind, resample):

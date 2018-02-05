@@ -49,22 +49,38 @@ analyze:
 
 plot:
   period:
-    - hourly:
+    - daily:
       name: "1D"
-      rewind: 30d
-      resample: 1h
+      rewind: 24h
+      resample: 15min
       function:
         sma:
-          - 76
-          - 152
+          - 6
+          - 20
     - weekly:
       name: "7D"
-      rewind: 90d
-      resample: 1d
+      rewind: 7d
+      resample: 1h
       function:
         sma:
           - 12
           - 30
+    - monthly:
+      name: "1M"
+      rewind: 30d
+      resample: 6h
+      function:
+        sma:
+          - 6
+          - 20
+    - monthly:
+      name: "6M"
+      rewind: 180d
+      resample: 1d
+      function:
+        sma:
+          - 7
+          - 21
 
 #    - monthly:
 #      name: "1M"
