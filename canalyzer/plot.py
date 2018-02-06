@@ -25,6 +25,7 @@ import statsmodels.tsa.api as smt
 import statsmodels.api as sm
 
 # Canalyzer
+import mylib.conf
 import mylib.date
 import mylib.file
 import mylib.text
@@ -32,22 +33,27 @@ import mylib.math
 import mylib.commons
 import mylib.indicator
 
+def getPlotResamplePeriod():
+    periods = collections.OrderedDict()
+    for period in  mylib.conf.yanalyzer['plot']['plotPerfCoins']['period']:
+        periods[pd.Timedelta(period['resample'])] = period
 
-def getMaxRewind():
+    periods = collections.OrderedDict(sorted(periods.items()))
+    return periods
+
+def getPlotMaxRewind():
     # Get max rewind period for loading data
     rewinds = []
 
-    for periodname in ['analyze', 'plot']:
-        for period in mylib.conf.yanalyzer[periodname]['period']:
-            rewinds.append(pd.Timedelta(period['rewind']))
+    for period in mylib.conf.yanalyzer['plot']['plotPerfCoins']['period']:
+        rewinds.append(pd.Timedelta(period['rewind']))
 
     maxrewind = sorted(rewinds)[-1]
 
     return maxrewind
 
 def plotPerfCoins( allcoins):
-    periods = mylib.conf.getPeriods('plot')
-    periods = collections.OrderedDict(sorted(periods.items(),reverse=True))
+    periods = getPlotResamplePeriod()
 
     mindate = None
     maxdate = None
@@ -89,23 +95,26 @@ def plotPerfCoins( allcoins):
         globalperf = grp['globalperf']['mean']
         zeroline = globalperf*0
 
-        # Linear
-        std, middle, lower, upper = mylib.indicator.LR(globalperf)
-        grp['middle'] = middle
-        grp['lower'] = lower
-        grp['upper'] = upper
 
         ax = axr[axline]
         zeroline.plot(ax=ax,color='black',style='--')
         globalperf.plot(ax=ax,label='globalperf',legend=True)
 
-        for n in period['function']['sma']:
+        # SMA
+        for n in period['function']['SMA']:
             SMA = mylib.indicator.SMA(globalperf,n)
             SMA.plot(ax=ax,label='SMA%s' % (n),legend=True)
 
-        grp['middle'].plot(ax=ax,linestyle=':',label='middle',legend=True)
-        grp['lower'].plot(ax=ax,linestyle=':',label='lower',legend=True)
-        grp['upper'].plot(ax=ax,linestyle=':',label='upper',legend=True)
+        # Linear
+        for n in period['function']['LR']:
+            std, middle, lower, upper = mylib.indicator.LR(globalperf,n)
+            grp['middle'] = middle
+            grp['lower'] = lower
+            grp['upper'] = upper
+
+            grp['middle'].plot(ax=ax,linestyle=':',label='middle',legend=True)
+            grp['lower'].plot(ax=ax,linestyle=':',label='lower',legend=True)
+            grp['upper'].plot(ax=ax,linestyle=':',label='upper',legend=True)
 
         ax.set_xlabel('')
         ax.set_ylabel('Percent (%)')
@@ -129,6 +138,6 @@ coins = mylib.commons.getCoins4Markets(markets)
 
 # Load all historical coins
 allcoins = {}
-maxrewind = getMaxRewind()
+maxrewind = getPlotMaxRewind()
 allcoins = mylib.commons.loadAllCoinsHistorical(coins,maxrewind)
 plotPerfCoins(allcoins)

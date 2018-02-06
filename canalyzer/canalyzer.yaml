@@ -48,39 +48,48 @@ analyze:
 
 
 plot:
-  period:
-    - daily:
-      name: "1D"
-      rewind: 24h
-      resample: 15min
-      function:
-        sma:
-          - 6
-          - 20
-    - weekly:
-      name: "7D"
-      rewind: 7d
-      resample: 1h
-      function:
-        sma:
-          - 12
-          - 30
-    - monthly:
-      name: "1M"
-      rewind: 30d
-      resample: 6h
-      function:
-        sma:
-          - 6
-          - 20
-    - monthly:
-      name: "6M"
-      rewind: 180d
-      resample: 1d
-      function:
-        sma:
-          - 7
-          - 21
+  plotPerfCoins:
+    period:
+      - daily:
+        name: "2D"
+        rewind: 2d
+        resample: 15min
+        function:
+          SMA:
+            - 20
+            - 50
+          LR:
+            - 96
+      - weekly:
+        name: "14D"
+        rewind: 14d
+        resample: 1h
+        function:
+          SMA:
+            - 20
+            - 50
+          LR:
+            - 168
+      - monthly:
+        name: "2M"
+        rewind: 30d
+        resample: 6h
+        function:
+          SMA:
+            - 20
+            - 50
+          LR:
+            - 60
+      - quater:
+        name: "6M"
+        rewind: 180d
+        resample: 1d
+        function:
+          SMA:
+            - 20
+            - 50
+          LR:
+            - 90
 
 #    - monthly:
 #      name: "1M"
