@@ -46,50 +46,205 @@ analyze:
       rewind: 10d
       resample: 7d
 
+  function:
+    plotPercentPerfCoins:
+      destination: /tmp/
+      period:
+        - name: "3d-rewind"
+          data:
+            rewind: 3d
+            resample: 15min
+          function:
+            SMA:
+              - 20
+              - 50
+            LR2:
+              - divisor: 1
+            SL:
+              - point: 2018-02-01
+              - point: 2018-02-07
 
-plot:
-  plotPerfCoins:
-    period:
-      - daily:
-        name: "2D"
-        rewind: 2d
-        resample: 15min
-        function:
-          SMA:
-            - 20
-            - 50
-          LR:
-            - 96
-      - weekly:
-        name: "14D"
-        rewind: 14d
-        resample: 1h
-        function:
-          SMA:
-            - 20
-            - 50
-          LR:
-            - 168
-      - monthly:
-        name: "2M"
-        rewind: 30d
-        resample: 6h
-        function:
-          SMA:
-            - 20
-            - 50
-          LR:
-            - 60
-      - quater:
-        name: "6M"
-        rewind: 180d
-        resample: 1d
-        function:
-          SMA:
-            - 20
-            - 50
-          LR:
-            - 90
+            trend_line:
+                - box:
+                    start: 2017-05-01
+                    end: 2017-10-01
+                  point:
+                    first: 2017-05-15
+                    second: 2017-09-01
+        - name: "10d-rewind"
+          data:
+            rewind: 10d
+            resample: 30min
+          function:
+            SMA:
+              - 20
+              - 50
+            LR2:
+              - divisor: 1
+            SL:
+              - point: 2018-02-01
+              - point: 2018-02-06
+
+            trend_line:
+                - box:
+                    start: 2017-05-01
+                    end: 2017-10-01
+                  point:
+                    first: 2017-05-15
+                    second: 2017-09-01
+        - name: "30d-rewind"
+          data:
+            rewind: 30d
+            resample: 1h
+          function:
+            SMA:
+              - 20
+              - 50
+            LR2:
+              - divisor: 1
+            SL:
+              - point: 2018-02-01
+              - point: 2018-02-06
+
+            trend_line:
+                - box:
+                    start: 2017-05-01
+                    end: 2017-10-01
+                  point:
+                    first: 2017-05-15
+                    second: 2017-09-01
+        - name: "90d-rewind"
+          data:
+            rewind: 90d
+            resample: 12h
+          function:
+            SMA:
+              - 20
+              - 50
+            LR2:
+              - divisor: 1
+            SL:
+              - point: 2018-02-01
+              - point: 2018-02-06
+
+            trend_line:
+                - box:
+                    start: 2017-05-01
+                    end: 2017-10-01
+                  point:
+                    first: 2017-05-15
+                    second: 2017-09-01
+        # - name: "monthly-full"
+        #   data:
+        #     rewind: 40d
+        #     resample: 1h
+        #   function:
+        #     SMA:
+        #       - 20
+        #       - 50
+        #     LR:
+        #       - 48
+        #       - 0
+        #     SL:
+        #       - point: 2018-02-01
+        #       - point: 2018-02-06
+        #
+        #     trend_line:
+        #         - box:
+        #             start: 2017-05-01
+        #             end: 2017-10-01
+        #           point:
+        #             first: 2017-05-15
+        #             second: 2017-09-01
+        # - name: "yearly-full-lr"
+        #   data:
+        #     rewind: 360d
+        #     resample: 1d
+        #   function:
+        #     SMA:
+        #       - 15
+        #       - 60
+        #     LR:
+        #       - 90
+        #       - 0
+        #     SL:
+        #       - 3000
+        #     trend_line:
+        #         - box:
+        #             start: 2017-05-01
+        #             end: 2017-10-01
+        #           point:
+        #             first: 2017-05-15
+        #             second: 2017-09-01
+        # - name: "yearly-back15-lr"
+        #   data:
+        #     rewind: 36d
+        #     resample: 1d
+        #     nbcut: 15
+        #   function:
+        #     SMA:
+        #       - 15
+        #       - 60
+        #     LR:
+        #       - 90
+        #       - 0
+        #     SL:
+        #       - 3000
+        # - name: "yearly-back30-lr"
+        #   data:
+        #     rewind: 36d
+        #     resample: 1d
+        #     nbcut: 30
+        #   function:
+        #     SMA:
+        #       - 15
+        #       - 60
+        #     LR:
+        #       - 90
+        #       - 0
+        #     SL:
+        #       - 3000
+
+        # - yearly2:
+        #   name: "yearly-quartely-lr2"
+        #   rewind: 359d
+        #   resample: 1d
+        #   function:
+        #     SMA:
+        #       - 15
+        #       - 60
+        #     LR2:
+        #       - 90
+        # - weekly:
+        #   name: "weekly-day"
+        #   rewind: 7d
+        #   resample: 15min
+        #   function:
+        #     SMA:
+        #       - 20
+        #       - 50
+        #     LR:
+        #       - 96
+        # - montly:
+        #   name: "monthly-week"
+        #   rewind: 30d
+        #   resample: 15min
+        #   function:
+        #     SMA:
+        #       - 20
+        #       - 50
+        #     LR:
+        #       - 672
+        # - quarterly:
+        #   name: "quartely-monthly"
+        #   rewind: 30d
+        #   resample: 6h
+        #   function:
+        #     SMA:
+        #       - 20
+        #       - 50
+        #     LR:
+        #       - 120
 
 #    - monthly:
 #      name: "1M"
