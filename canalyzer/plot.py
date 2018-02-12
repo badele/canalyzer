@@ -229,8 +229,8 @@ def plotPricePerfCoins( allcoins):
                     except (KeyboardInterrupt, SystemExit):
                         raise
                     except:
-                        print  ("ERROR with %(coins)s" % locals())
-                        raise
+                        print  ("ERROR with %(coin)s" % locals())
+                        continue
 
             except:
                 print ("ignore plotPercentPerfCoins #1")
@@ -240,32 +240,40 @@ def plotPricePerfCoins( allcoins):
         df = pd.concat(summariescoins, axis=0)
 
         grp = df.groupby('date')
-        grp = grp.agg({'last': ['mean']})
+        grp = grp.agg({'globalperf': ['mean']})
 
         # Plot
-        value = grp['last']['mean']
+        value = grp['globalperf']['mean']
 
         #ax = axr[axline]
         value.plot(label='value',legend=True)
+
+        minvalue = value.min()
+        maxvalue = value.max()
 
         # Trend Line
         if 'trend_line' in period['function']:
             for options in period['function']['trend_line']:
                 grp['trend_line']= mylib.indicator.trend_line(value,options)
-
                 grp['trend_line'].plot(linewidth=3, label='TrendLine',legend=True)
+                minvalue = min(minvalue,grp['trend_line'].min())
+                maxvalue = max(maxvalue,grp['trend_line'].max())
 
         # Support Line
         if 'SL' in period['function']:
             for options in period['function']['SL']:
                 grp['SL'] = mylib.indicator.SL(value,options)
                 grp['SL'].plot(linewidth=3, label='SL',legend=True)
+                minvalue = min(minvalue,grp['SL'].min())
+                maxvalue = max(maxvalue,grp['SL'].max())
 
         # SMA
         if 'SMA' in period['function']:
             for n in period['function']['SMA']:
                 grp['SMA'] = mylib.indicator.SMA(value,n)
                 grp['SMA'].plot(label='SMA%s' % (n),legend=True)
+                minvalue = min(minvalue,grp['SMA'].min())
+                maxvalue = max(maxvalue,grp['SMA'].max())
 
         # Linear
         if 'LR' in period['function']:
@@ -276,8 +284,10 @@ def plotPricePerfCoins( allcoins):
                 grp['upper'] = upper
 
                 grp['middle'].plot(linestyle=':',label='middle',legend=True)
-                grp['lower'].plot(linestyle=':',label='lower',legend=True)
-                grp['upper'].plot(linestyle=':',label='upper',legend=True)
+                grp['lower'].plot(linewidth=3,color='r',label='lower',legend=True)
+                grp['upper'].plot(linewidth=3,color='g',label='upper',legend=True)
+                minvalue = min(minvalue,grp['lower'].min())
+                maxvalue = max(maxvalue,grp['upper'].max())
 
         if 'LR2' in period['function']:
             for n in period['function']['LR2']:
@@ -287,8 +297,10 @@ def plotPricePerfCoins( allcoins):
                 grp['upper'] = upper
 
                 grp['middle'].plot(linestyle=':',label='middle',legend=True)
-                grp['lower'].plot(linestyle=':',label='lower',legend=True)
-                grp['upper'].plot(linestyle=':',label='upper',legend=True)
+                grp['lower'].plot(linewidth=3,color='r',label='lower',legend=True)
+                grp['upper'].plot(linewidth=3,color='g',label='upper',legend=True)
+                minvalue = min(minvalue,grp['lower'].min())
+                maxvalue = max(maxvalue,grp['upper'].max())
 
         #plt.set_xlabel('')
         #plt.set_ylabel('Percent (%)')
@@ -300,7 +312,7 @@ def plotPricePerfCoins( allcoins):
         ax.get_xaxis().tick_bottom()
         ax.get_yaxis().tick_left()
 
-        plt.ylim(value.min()*.9, value.max()*1.1)
+        plt.ylim(minvalue,maxvalue)
         #plt.xlim(1968, 2014)
 
         plt.tick_params(axis="both", which="both", bottom="off", top="off",
@@ -324,7 +336,8 @@ def plotPricePerfCoins( allcoins):
 mylib.commons.initCanalyzer()
 markets = mylib.conf.getSelectedMarkets()
 coins = mylib.commons.getCoins4Markets(markets)
-coins = coins[:5]
+#coins = coins[:10]
+#coins = ['DRPU','CHSB']
 
 # Load all historical coins
 allcoins = {}

@@ -66,25 +66,23 @@ def trend_line(df,o):
 
 # Linear Regression
 def LR(df,options):
-    srcsize = len(df)
+    origsize = len(df)
 
-    n = 0
+    ldf=df.copy()
     if 'divisor' in options:
-        n = int(srcsize / options['divisor'])
+        ldf = df.tail(int(origsize / options['divisor']))
 
-    # Resize for Linear Regression computin
-    if n != 0:
-        df = df.tail(n)
+    x = np.arange(len(ldf))
+    X = sm.add_constant(x)
 
-    x = np.arange(len(df))
-
-    res = sm.OLS(df,x).fit()
+    res = sm.OLS(ldf,X).fit()
+    print(res.summary())
 
     std, lower, upper = wls_prediction_std(res)
     middle = res.predict()
 
-    nfill = srcsize - n
-    if nfill != srcsize:
+    nfill = origsize - len(ldf)
+    if nfill < origsize:
         empty = np.full_like(np.arange(nfill), np.nan, dtype=np.double)
         std = np.append(empty,std)
         lower = np.append(empty,lower)
@@ -95,27 +93,24 @@ def LR(df,options):
 
 # Linear Regression
 def LR2(df,options):
-    srcsize = len(df)
+    origsize = len(df)
 
-    n = 0
+    ldf=df.copy()
     if 'divisor' in options:
-        n = int(srcsize / options['divisor'])
+        ldf = df.tail(int(origsize / options['divisor']))
 
-    # Resize for Linear Regression computin
-    if n != 0:
-        df = df.tail(n)
-
-    x = np.arange(len(df))
+    x = np.arange(len(ldf))
     X = np.column_stack((x, x**2))
     X = sm.add_constant(X)
 
-    res = sm.OLS(df,X).fit()
+    res = sm.OLS(ldf,X).fit()
+    print(res.summary())
 
     std, lower, upper = wls_prediction_std(res)
     middle = res.predict()
 
-    nfill = srcsize - n
-    if nfill != srcsize:
+    nfill = origsize - len(ldf)
+    if nfill < origsize:
         empty = np.full_like(np.arange(nfill), np.nan, dtype=np.double)
         std = np.append(empty,std)
         lower = np.append(empty,lower)
