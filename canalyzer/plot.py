@@ -29,7 +29,6 @@ import mylib.conf
 import mylib.date
 import mylib.file
 import mylib.text
-import mylib.math
 import mylib.commons
 import mylib.indicator
 
@@ -155,13 +154,13 @@ def plotPercentPerfCoins( allcoins):
 
         #plt.set_xlabel('')
         #plt.set_ylabel('Percent (%)')
-        ax.spines["top"].set_visible(False)
-        ax.spines["bottom"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
+        axu.spines["top"].set_visible(False)
+        axu.spines["bottom"].set_visible(False)
+        axu.spines["right"].set_visible(False)
+        axu.spines["left"].set_visible(False)
 
-        ax.get_xaxis().tick_bottom()
-        ax.get_yaxis().tick_left()
+        axu.get_xaxis().tick_bottom()
+        axu.get_yaxis().tick_left()
 
         plt.ylim(globalperf.min()*1.1, globalperf.max()*1.1)
         #plt.xlim(1968, 2014)
@@ -193,15 +192,24 @@ def plotPricePerfCoins( allcoins):
     # fig.subplots_adjust(hspace = .5, wspace=.001)
 
     # Init plot
-    plt.figure(figsize=(16, 12))
-    ax = plt.subplot(111)
 
     #axline = 0
     periods = mylib.conf.yanalyzer['analyze']['function']['plotPercentPerfCoins']['period']
     for period in periods:
+        plt.clf()
+        fig = plt.figure(figsize=(16, 12))
+        # axu = plt.subplot(211)
+        # axd = plt.subplot(212)
+
+        left, width = 0.05, 0.9
+        rectu = [left, 0.2, width, 0.7]
+        rectd = [left, 0.1, width, 0.1]
+
+        axu = fig.add_axes(rectu)
+        axd = fig.add_axes(rectd, sharex=axu)
+
         pname = period['name']
 
-        plt.clf()
         summariescoins = []
 
         nbcut = 0
@@ -237,6 +245,7 @@ def plotPricePerfCoins( allcoins):
                 ignoredcoins += 1
                 raise
 
+
         df = pd.concat(summariescoins, axis=0)
 
         grp = df.groupby('date')
@@ -246,7 +255,8 @@ def plotPricePerfCoins( allcoins):
         value = grp['globalperf']['mean']
 
         #ax = axr[axline]
-        value.plot(label='value',legend=True)
+        value.plot(ax=axu,label='value',legend=True)
+        value.plot(ax=axd,label='value',legend=True)
 
         minvalue = value.min()
         maxvalue = value.max()
@@ -255,7 +265,7 @@ def plotPricePerfCoins( allcoins):
         if 'trend_line' in period['function']:
             for options in period['function']['trend_line']:
                 grp['trend_line']= mylib.indicator.trend_line(value,options)
-                grp['trend_line'].plot(linewidth=3, label='TrendLine',legend=True)
+                grp['trend_line'].plot(ax=axu,linewidth=3, label='TrendLine',legend=True)
                 minvalue = min(minvalue,grp['trend_line'].min())
                 maxvalue = max(maxvalue,grp['trend_line'].max())
 
@@ -263,7 +273,7 @@ def plotPricePerfCoins( allcoins):
         if 'SL' in period['function']:
             for options in period['function']['SL']:
                 grp['SL'] = mylib.indicator.SL(value,options)
-                grp['SL'].plot(linewidth=3, label='SL',legend=True)
+                grp['SL'].plot(ax=axu,linewidth=3, label='SL',legend=True)
                 minvalue = min(minvalue,grp['SL'].min())
                 maxvalue = max(maxvalue,grp['SL'].max())
 
@@ -271,7 +281,7 @@ def plotPricePerfCoins( allcoins):
         if 'SMA' in period['function']:
             for n in period['function']['SMA']:
                 grp['SMA'] = mylib.indicator.SMA(value,n)
-                grp['SMA'].plot(label='SMA%s' % (n),legend=True)
+                grp['SMA'].plot(ax=axu,label='SMA%s' % (n),legend=True)
                 minvalue = min(minvalue,grp['SMA'].min())
                 maxvalue = max(maxvalue,grp['SMA'].max())
 
@@ -283,9 +293,9 @@ def plotPricePerfCoins( allcoins):
                 grp['lower'] = lower
                 grp['upper'] = upper
 
-                grp['middle'].plot(linestyle=':',label='middle',legend=True)
-                grp['lower'].plot(linewidth=3,color='r',label='lower',legend=True)
-                grp['upper'].plot(linewidth=3,color='g',label='upper',legend=True)
+                grp['middle'].plot(ax=axu,linestyle=':',label='middle',legend=True)
+                grp['lower'].plot(ax=axu,linewidth=3,color='r',label='lower',legend=True)
+                grp['upper'].plot(ax=axu,linewidth=3,color='g',label='upper',legend=True)
                 minvalue = min(minvalue,grp['lower'].min())
                 maxvalue = max(maxvalue,grp['upper'].max())
 
@@ -296,36 +306,40 @@ def plotPricePerfCoins( allcoins):
                 grp['lower'] = lower
                 grp['upper'] = upper
 
-                grp['middle'].plot(linestyle=':',label='middle',legend=True)
-                grp['lower'].plot(linewidth=3,color='r',label='lower',legend=True)
-                grp['upper'].plot(linewidth=3,color='g',label='upper',legend=True)
+                grp['middle'].plot(ax=axu,linestyle=':',label='middle',legend=True)
+                grp['lower'].plot(ax=axu,linewidth=3,color='r',label='lower',legend=True)
+                grp['upper'].plot(ax=axu,linewidth=3,color='g',label='upper',legend=True)
                 minvalue = min(minvalue,grp['lower'].min())
                 maxvalue = max(maxvalue,grp['upper'].max())
 
         #plt.set_xlabel('')
         #plt.set_ylabel('Percent (%)')
-        ax.spines["top"].set_visible(False)
-        ax.spines["bottom"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
+        axu.spines["top"].set_visible(False)
+        axu.spines["bottom"].set_visible(False)
+        axu.spines["right"].set_visible(False)
+        axu.spines["left"].set_visible(False)
 
-        ax.get_xaxis().tick_bottom()
-        ax.get_yaxis().tick_left()
+        axu.get_xaxis().tick_bottom()
+        axu.get_yaxis().tick_left()
 
         plt.ylim(minvalue,maxvalue)
         #plt.xlim(1968, 2014)
 
-        plt.tick_params(axis="both", which="both", bottom="off", top="off",
+        axu.tick_params(axis="both", which="both", bottom="off", top="off",
         labelbottom="on", left="off", right="off", labelleft="on")
 
-        plt.grid(True)
-        plt.margins(x=0)
+        axu.grid(True)
+        axu.margins(x=0)
+
+        axd.grid(True)
+        axd.margins(x=0)
+
 
         nbcoins = len(coins)
         rewind = period['data']['rewind']
         resample = period['data']['resample']
         title = "%(nbcoins)s coins performance / [%(pname)s / rew:%(rewind)s-res:%(resample)s]" % locals()
-        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=9,ncol=7, mode="expand", borderaxespad=0.,fontsize='x-small',title=title)
+        axu.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=9,ncol=7, mode="expand", borderaxespad=0.,fontsize='x-small',title=title)
 
         destination = mylib.conf.yanalyzer['analyze']['function']['plotPercentPerfCoins']['destination']
         plt.draw()
@@ -336,7 +350,7 @@ def plotPricePerfCoins( allcoins):
 mylib.commons.initCanalyzer()
 markets = mylib.conf.getSelectedMarkets()
 coins = mylib.commons.getCoins4Markets(markets)
-#coins = coins[:10]
+coins = coins[147:148]
 #coins = ['DRPU','CHSB']
 
 # Load all historical coins
