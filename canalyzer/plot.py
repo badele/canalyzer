@@ -247,16 +247,19 @@ def plotPricePerfCoins( allcoins):
 
 
         df = pd.concat(summariescoins, axis=0)
+        df['perftrendup'] = df['globalperf'] > 0
 
         grp = df.groupby('date')
-        grp = grp.agg({'globalperf': ['mean']})
+        grp = grp.agg({'globalperf': ['mean'],'perftrendup': ['sum']})
 
         # Plot
         value = grp['globalperf']['mean']
+        perfupzero = grp['perftrendup']['sum']
+
 
         #ax = axr[axline]
         value.plot(ax=axu,label='value',legend=True)
-        value.plot(ax=axd,label='value',legend=True)
+        perfupzero.plot(ax=axd,label='value',legend=True)
 
         minvalue = value.min()
         maxvalue = value.max()
@@ -350,7 +353,7 @@ def plotPricePerfCoins( allcoins):
 mylib.commons.initCanalyzer()
 markets = mylib.conf.getSelectedMarkets()
 coins = mylib.commons.getCoins4Markets(markets)
-coins = coins[147:148]
+coins = coins[:10]
 #coins = ['DRPU','CHSB']
 
 # Load all historical coins

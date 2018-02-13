@@ -53,7 +53,7 @@ analyze:
         - name: "3d-01-cut-24h"
           data:
             rewind: 5d
-            resample: 1min
+            resample: 15min
             nbcut: 96
           function:
             SMA:
