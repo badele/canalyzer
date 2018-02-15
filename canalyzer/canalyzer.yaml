@@ -52,10 +52,11 @@ analyze:
       period:
         - name: "3d-01-cut-24h"
           data:
-            rewind: 5d
+            rewind: 3d
             resample: 15min
-            nbcut: 96
+            nbcut: 1
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -78,6 +79,7 @@ analyze:
             resample: 30min
             nbcut: 144
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -100,6 +102,7 @@ analyze:
             resample: 1h
             nbcut: 168
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -122,6 +125,7 @@ analyze:
             resample: 4h
             nbcut: 90
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -144,6 +148,7 @@ analyze:
             resample: 8h
             nbcut: 90
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -165,6 +170,7 @@ analyze:
             rewind: 3d
             resample: 15min
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -186,6 +192,7 @@ analyze:
             rewind: 10d
             resample: 30min
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -207,6 +214,7 @@ analyze:
             rewind: 30d
             resample: 1h
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -228,6 +236,7 @@ analyze:
             rewind: 90d
             resample: 4h
           function:
+            Direction: 20
             SMA:
               - 20
               - 50
@@ -249,6 +258,7 @@ analyze:
             rewind: 90d
             resample: 8h
           function:
+            Direction: 20
             SMA:
               - 20
               - 50

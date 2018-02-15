@@ -45,7 +45,7 @@ def getPlotMaxRewind():
 
 def plotPercentPerfCoins( allcoins):
     mindate = None
-    maxdate = None
+    maxbate = None
     ignoredcoins = 0
 
     dfallperiod = pd.DataFrame()
@@ -183,7 +183,7 @@ def plotPercentPerfCoins( allcoins):
 
 def plotPricePerfCoins( allcoins):
     mindate = None
-    maxdate = None
+    maxbate = None
     ignoredcoins = 0
 
     dfallperiod = pd.DataFrame()
@@ -199,14 +199,14 @@ def plotPricePerfCoins( allcoins):
         plt.clf()
         fig = plt.figure(figsize=(16, 12))
         # axu = plt.subplot(211)
-        # axd = plt.subplot(212)
+        # axb = plt.subplot(212)
 
         left, width = 0.05, 0.9
         rectu = [left, 0.2, width, 0.7]
         rectd = [left, 0.1, width, 0.1]
 
         axu = fig.add_axes(rectu)
-        axd = fig.add_axes(rectd, sharex=axu)
+        axb = fig.add_axes(rectd, sharex=axu)
 
         pname = period['name']
 
@@ -245,21 +245,22 @@ def plotPricePerfCoins( allcoins):
                 ignoredcoins += 1
                 raise
 
-
         df = pd.concat(summariescoins, axis=0)
-        df['perftrendup'] = df['globalperf'] > 0
+        df['Direction'] = np.sign(mylib.indicator.Direction(df['globalperf'],period['function']['Direction']))
 
         grp = df.groupby('date')
-        grp = grp.agg({'globalperf': ['mean'],'perftrendup': ['sum']})
+        grp = grp.agg({'globalperf': ['mean'],'Direction': ['sum']})
+
+
 
         # Plot
         value = grp['globalperf']['mean']
-        perfupzero = grp['perftrendup']['sum']
+        pdirection = grp['Direction']['sum']
 
 
         #ax = axr[axline]
         value.plot(ax=axu,label='value',legend=True)
-        perfupzero.plot(ax=axd,label='value',legend=True)
+        pdirection.plot(ax=axb,label='value',legend=True)
 
         minvalue = value.min()
         maxvalue = value.max()
@@ -322,20 +323,32 @@ def plotPricePerfCoins( allcoins):
         axu.spines["right"].set_visible(False)
         axu.spines["left"].set_visible(False)
 
+        axb.spines["top"].set_visible(False)
+        axb.spines["bottom"].set_visible(False)
+        axb.spines["right"].set_visible(False)
+        axb.spines["left"].set_visible(False)
+
         axu.get_xaxis().tick_bottom()
         axu.get_yaxis().tick_left()
 
-        plt.ylim(minvalue,maxvalue)
+        axb.get_xaxis().tick_bottom()
+        axb.get_yaxis().tick_left()
+
+        axu.set_ylim(minvalue,maxvalue)
+        axb.set_ylim(len(coins)*-1,len(coins))
         #plt.xlim(1968, 2014)
 
         axu.tick_params(axis="both", which="both", bottom="off", top="off",
         labelbottom="on", left="off", right="off", labelleft="on")
 
+        axb.tick_params(axis="both", which="both", bottom="off", top="off",
+        labelbottom="on", left="off", right="off", labelleft="on")
+
         axu.grid(True)
         axu.margins(x=0)
 
-        axd.grid(True)
-        axd.margins(x=0)
+        axb.grid(True)
+        axb.margins(x=0)
 
 
         nbcoins = len(coins)
@@ -343,6 +356,14 @@ def plotPricePerfCoins( allcoins):
         resample = period['data']['resample']
         title = "%(nbcoins)s coins performance / [%(pname)s / rew:%(rewind)s-res:%(resample)s]" % locals()
         axu.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=9,ncol=7, mode="expand", borderaxespad=0.,fontsize='x-small',title=title)
+
+        #axu.minorticks_on()
+        axu.grid(which='major', linestyle='-', linewidth='0.5', color='gray')
+        axu.grid(which='minor', linestyle=':', linewidth='0.5', color='lightgrey')
+
+        axb.minorticks_on()
+        axb.grid(which='major', linestyle='-', linewidth='0.5', color='gray')
+        axb.grid(which='minor', linestyle=':', linewidth='0.5', color='lightgrey')
 
         destination = mylib.conf.yanalyzer['analyze']['function']['plotPercentPerfCoins']['destination']
         plt.draw()
@@ -353,7 +374,7 @@ def plotPricePerfCoins( allcoins):
 mylib.commons.initCanalyzer()
 markets = mylib.conf.getSelectedMarkets()
 coins = mylib.commons.getCoins4Markets(markets)
-coins = coins[:10]
+#coins = coins[:5]
 #coins = ['DRPU','CHSB']
 
 # Load all historical coins

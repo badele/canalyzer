@@ -15,6 +15,12 @@ def SMA(df, n):
 
     return r
 
+def Direction(df,n):
+    prev = df.shift(n)
+    r = df-prev
+
+    return r
+    
 # Support Line
 def SL(df, o):
 
